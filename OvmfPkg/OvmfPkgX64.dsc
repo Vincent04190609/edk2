@@ -508,6 +508,10 @@
 !endif
 
 [PcdsFixedAtBuild]
+  # SMBIOS Manufacturer and BIOS Version for T36
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vincent Inc."
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T36"
+
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
