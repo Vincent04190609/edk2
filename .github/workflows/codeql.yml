@@ -18,9 +18,14 @@ on:
   pull_request:
     branches:
       - master
-    paths-ignore:
-      - '!**.c'
-      - '!**.h'
+    # Trigger CodeQL analysis for source code changes and dependency updates
+    # to ensure security scanning covers both code and supply chain security.
+    paths:
+      - '**.c'
+      - '**.h'
+      - '.github/workflows/**'
+      - 'pip-requirements.txt'
+      - 'requirements.txt'
 
 jobs:
   analyze:
@@ -68,6 +73,10 @@ jobs:
           - Package: "SourceLevelDebugPkg"
             ArchList: "IA32,X64"
           - Package: "StandaloneMmPkg"
+            ArchList: "IA32,X64"
+          - Package: "UefiCpuPkg"
+            ArchList: "IA32,X64"
+          - Package: "UnitTestFrameworkPkg"
             ArchList: "IA32,X64"
           - Package: "UefiCpuPkg"
             ArchList: "IA32,X64"
