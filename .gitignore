@@ -5,3 +5,8 @@ Build/
 __pycache__/
 tags/
 .vscode/
+
+# Build artifacts
+BUILD_COMPLETE.md
+build-output.log
+*.log
