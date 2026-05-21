@@ -4,13 +4,29 @@ This file contains codebase context and development guidelines for the BIOS proj
 
 ## Knowledge Base
 
-The project maintains a centralized knowledge base in the `docs/` directory:
+### External Knowledge Base
+
+**Primary Knowledge Repository**: `d:\VibeCoding\Projects\Onboarding\README.md`
+
+This external knowledge base contains comprehensive BIOS/UEFI development documentation:
+
+- **BIOS/UEFI Reference** (`./bios-uefi-reference/`) - Technical specifications, protocols, and implementation details
+- **Development Guides** (`./development-guides/`) - Coding standards, build processes, and best practices
+- **Architecture** (`./architecture/`) - System architecture, design decisions, and component relationships
+- **Troubleshooting** (`./troubleshooting/`) - Common issues, debugging techniques, and solutions
+- **Onboarding** (`./onboarding/`) - Getting started materials, environment setup, and first-build guides
+
+**Quick Access**: For specific guidance, read `d:\VibeCoding\Projects\Onboarding\README.md` and navigate to relevant subdirectories.
+
+### Project Knowledge Base (docs/)
+
+The project also maintains local knowledge in the `docs/` directory:
 
 - **docs/processes/** - Development workflows and procedures (CI/CD setup, code review protocol)
 - **docs/architecture/** - Infrastructure and system architecture documentation
 - **docs/security/** - Security review processes and audit procedures
 
-See [docs/README.md](docs/README.md) for complete knowledge base structure and usage guidelines.
+See [docs/README.md](docs/README.md) for complete local knowledge base structure.
 
 ### Documentation Guidelines
 
