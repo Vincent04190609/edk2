@@ -47,6 +47,28 @@ See [docs/README.md](docs/README.md) for complete local knowledge base structure
 
 ## Knowledge Storage Guidance
 
+### Repository Setup
+
+**Critical**: Configure git to handle line ending differences between Windows and Ubuntu environments.
+
+#### Clone Strategy
+
+```bash
+# Configure git to preserve line endings (prevents CR issues between Windows/Ubuntu)
+git config --global core.autocrlf false
+
+# Clone with submodules
+git clone --recurse-submodules https://github.com/Vincent04190609/edk2.git
+cd edk2
+```
+
+**Why this configuration matters**:
+- `core.autocrlf false` prevents automatic CRLF conversion that causes build issues when moving code between Windows development and Ubuntu testing environments
+- `--recurse-submodules` ensures all EDK2 dependencies are cloned in one step
+- This strategy must be followed by all developers to maintain consistent line endings across environments
+
+**Verification**: After cloning, verify submodules are initialized with `git submodule status`
+
 ### Git Clone Information
 
 For **git clone information** and repository setup details, store in the Paperclip memory system:
