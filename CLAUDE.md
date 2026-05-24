@@ -90,7 +90,8 @@ For **git clone information** and repository setup details, store in the Papercl
   - Submodules: `git submodule update --init --recursive`
   
   ## Project Repository
-  - [Add your project-specific clone information here]
+  
+    - refer to **Primary Knowledge Repository**
   
   **Why**: Standardized setup ensures consistent development environments across team members and agent sessions.
   
