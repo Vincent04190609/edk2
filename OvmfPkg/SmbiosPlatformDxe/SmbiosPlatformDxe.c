@@ -48,6 +48,22 @@ STATIC CONST SMBIOS_TABLE_TYPE0  mOvmfDefaultType0 = {
   0xFF   // UINT8                     EmbeddedControllerFirmwareMinorRelease
 };
 
+STATIC CONST SMBIOS_TABLE_TYPE1  mOvmfDefaultType1 = {
+  // SMBIOS_STRUCTURE Hdr
+  {
+    EFI_SMBIOS_TYPE_SYSTEM_INFORMATION, // UINT8 Type
+    sizeof (SMBIOS_TABLE_TYPE1),        // UINT8 Length
+  },
+  1,    // SMBIOS_TABLE_STRING       Manufacturer
+  2,    // SMBIOS_TABLE_STRING       ProductName
+  3,    // SMBIOS_TABLE_STRING       Version
+  4,    // SMBIOS_TABLE_STRING       SerialNumber
+  { 0x12345678, 0x1234, 0x5678, { 0x90, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78 } }, // UUID
+  6,    // UINT8                     WakeUpType
+  0,    // SMBIOS_TABLE_STRING       SKUNumber
+  0     // SMBIOS_TABLE_STRING       Family
+};
+
 /**
   Get SMBIOS record length.
 
@@ -188,6 +204,46 @@ InstallAllStructures (
     ASSERT_EFI_ERROR (Status);
 
     FreePool (Type0);
+  }
+
+  //
+  // Add OVMF default Type 1 (System Information) table with serial number
+  //
+  {
+    CHAR8   *Type1;
+    CHAR8   *ManuStr      = "Vincent Inc";
+    CHAR8   *ProductStr   = "OVMF";
+    CHAR8   *VersionStr   = "1.0";
+    CHAR8   *SerialStr    = "0123456789ABCDEF";
+    UINTN   ManuLen       = AsciiStrLen (ManuStr);
+    UINTN   ProductLen    = AsciiStrLen (ProductStr);
+    UINTN   VersionLen    = AsciiStrLen (VersionStr);
+    UINTN   SerialLen     = AsciiStrLen (SerialStr);
+    UINTN   TotalStrLen   = ManuLen + ProductLen + VersionLen + SerialLen + 5; // +5 for null terminators and double null
+
+    DEBUG ((DEBUG_INFO, "Adding SMBIOS Type 1 with SerialNumber: %a\n", SerialStr));
+
+    Type1 = AllocateZeroPool (sizeof (mOvmfDefaultType1) + TotalStrLen);
+    if (Type1 == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    CopyMem (Type1, &mOvmfDefaultType1, sizeof (mOvmfDefaultType1));
+    AsciiStrCpyS (Type1 + sizeof (mOvmfDefaultType1), ManuLen + 1, ManuStr);
+    AsciiStrCpyS (Type1 + sizeof (mOvmfDefaultType1) + ManuLen + 1, ProductLen + 1, ProductStr);
+    AsciiStrCpyS (Type1 + sizeof (mOvmfDefaultType1) + ManuLen + ProductLen + 2, VersionLen + 1, VersionStr);
+    AsciiStrCpyS (Type1 + sizeof (mOvmfDefaultType1) + ManuLen + ProductLen + VersionLen + 3, SerialLen + 1, SerialStr);
+
+    SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
+    Status       = Smbios->Add (
+                             Smbios,
+                             NULL,
+                             &SmbiosHandle,
+                             (EFI_SMBIOS_TABLE_HEADER *)Type1
+                             );
+    ASSERT_EFI_ERROR (Status);
+
+    FreePool (Type1);
   }
 
   return EFI_SUCCESS;
