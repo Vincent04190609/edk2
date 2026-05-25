@@ -10,8 +10,13 @@ This file contains codebase context and development guidelines for the BIOS proj
 
 This external knowledge base contains comprehensive BIOS/UEFI development documentation:
 
-- **BIOS/UEFI Reference** (`./bios-uefi-reference/`) - Technical specifications, protocols, and implementation details
-- **Development Guides** (`./development-guides/`) - Coding standards, build processes, and best practices
+- **BIOS/UEFI Reference** (`../../Common/Industry-Standard-Documentation/UEFI-Spec/UEFI.md`) - UEFI Technical specifications, protocols, and implementation details
+
+- **SMBIOS Spec** (`../../Common/Industry-Standard-Documentation/SMBIOS-Spec/SMBIOS.md`) - SMBIOS Technical specifications, protocols, and implementation details
+
+- **ACPI Spec** (`../../Common/Industry-Standard-Documentation/ACP-Spec/ACPI.md`) - ACPI Technical specifications, protocols, and implementation details
+
+- **Development Guides** (`./development-guides/`) - Coding standards,Commit rule, build processes, and best practices
 - **Architecture** (`./architecture/`) - System architecture, design decisions, and component relationships
 - **Troubleshooting** (`./troubleshooting/`) - Common issues, debugging techniques, and solutions
 - **Onboarding** (`./onboarding/`) - Getting started materials, environment setup, and first-build guides
