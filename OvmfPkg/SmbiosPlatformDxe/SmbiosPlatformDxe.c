@@ -214,7 +214,7 @@ InstallAllStructures (
     CHAR8   *ManuStr      = "Vincent Inc";
     CHAR8   *ProductStr   = "OVMF";
     CHAR8   *VersionStr   = "1.0";
-    CHAR8   *SerialStr    = "0123456789ABCDEF";
+    CHAR8   *SerialStr    = "0FEDCBA987654321";
     UINTN   ManuLen       = AsciiStrLen (ManuStr);
     UINTN   ProductLen    = AsciiStrLen (ProductStr);
     UINTN   VersionLen    = AsciiStrLen (VersionStr);
