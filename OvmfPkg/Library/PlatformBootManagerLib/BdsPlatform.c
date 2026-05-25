@@ -1856,6 +1856,24 @@ PlatformBootManagerAfterConsole (
   SetBootOrderFromQemu ();
 
   PlatformBmPrintScRegisterHandler ();
+
+  //
+  // Force boot to setup menu for test BIOS (FWB-216)
+  // Automatically boot into Boot Manager Menu on power on
+  //
+  {
+    EFI_STATUS                    Status;
+    EFI_BOOT_MANAGER_LOAD_OPTION  BootManagerMenu;
+
+    Status = EfiBootManagerGetBootManagerMenu (&BootManagerMenu);
+    if (!EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_INFO, "FWB-216: Forcing boot to setup menu\n"));
+      EfiBootManagerBoot (&BootManagerMenu);
+      EfiBootManagerFreeLoadOption (&BootManagerMenu);
+    } else {
+      DEBUG ((DEBUG_ERROR, "FWB-216: Failed to get Boot Manager Menu: %r\n", Status));
+    }
+  }
 }
 
 /**
