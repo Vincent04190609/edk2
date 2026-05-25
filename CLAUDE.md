@@ -9,6 +9,10 @@ This file contains codebase context and development guidelines for the BIOS proj
 **Primary Knowledge Repository**: `d:\VibeCoding\Projects\Onboarding\README.md`
 
 This external knowledge base contains comprehensive BIOS/UEFI development documentation:
+\\
+Note: Relative paths (../../) in spec references are relative to the Primary Knowledge Repository (d:\VibeCoding\Projects\Onboarding\), not the current source tree.
+\\
+
 
 - **BIOS/UEFI Reference** (`../../Common/Industry-Standard-Documentation/UEFI-Spec/UEFI.md`) - UEFI Technical specifications, protocols, and implementation details
 
@@ -16,7 +20,7 @@ This external knowledge base contains comprehensive BIOS/UEFI development docume
 
 - **ACPI Spec** (`../../Common/Industry-Standard-Documentation/ACP-Spec/ACPI.md`) - ACPI Technical specifications, protocols, and implementation details
 
-- **Development Guides** (`./development-guides/`) - Coding standards,Commit rule, build processes, and best practices
+- **Development Guides** (`./development-guides/`) - Coding standards,Release BIOS rules, Commit rule, build processes, and best practices
 - **Architecture** (`./architecture/`) - System architecture, design decisions, and component relationships
 - **Troubleshooting** (`./troubleshooting/`) - Common issues, debugging techniques, and solutions
 - **Onboarding** (`./onboarding/`) - Getting started materials, environment setup, and first-build guides
