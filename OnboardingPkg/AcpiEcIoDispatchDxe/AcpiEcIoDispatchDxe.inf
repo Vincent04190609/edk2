@@ -1,0 +1,34 @@
+## @file
+#  ACPI EC 62/66 dispatch DXE driver.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = AcpiEcIoDispatchDxe
+  FILE_GUID                      = 2B3C4D5E-6F70-8192-A3B4-C5D6E7F8091A
+  MODULE_TYPE                    = UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = AcpiEcIoDispatchDxeEntryPoint
+
+[Sources]
+  AcpiEcIoDispatchDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  OnboardingPkg/OnboardingPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  DebugLib
+  PcdLib
+  OnboardingAcpiEcIoDispatchLib
+
+[Protocols]
+  gOnboardingAcpiEcIoDispatchProtocolGuid               ## PRODUCES
+
+[Pcd]
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcDataPort
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcCmdStatusPort

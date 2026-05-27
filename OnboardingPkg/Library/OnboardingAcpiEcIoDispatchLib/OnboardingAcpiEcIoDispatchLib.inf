@@ -1,0 +1,32 @@
+## @file
+#  ACPI EC 62/66 dispatch library.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = OnboardingAcpiEcIoDispatchLib
+  FILE_GUID                      = 1A2B3C4D-5E6F-7890-ABCD-EF1234567890
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = OnboardingAcpiEcIoDispatchLib
+
+[Sources]
+  OnboardingAcpiEcIoDispatchLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  OnboardingPkg/OnboardingPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  PcdLib
+
+[Pcd]
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEc59MaxParamBytes
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcDataPort
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcCmdStatusPort

@@ -1,0 +1,59 @@
+---
+description: MANDATORY knowledge write-back - Agents must update the Primary Knowledge Repository after implementing features or fixing bugs
+alwaysApply: true
+---
+
+# MANDATORY: Knowledge Capture (Write-Back)
+
+**This rule pairs with `lookup-order.mdc`:** read the knowledge base first, then write back after completing work.
+
+A feature implementation or bugfix task is **NOT complete** until the Primary Knowledge Repository has been updated (or the user explicitly opts out).
+
+**Write-back target**: `PROJECT_KB_ROOT` (see **`project-knowledge.mdc`** for `PROJECT_NAME` and paths). Do not write project playbooks/runbooks into `COMMON_KB_ROOT` unless explicitly updating shared standards.
+
+## When This Rule Applies
+
+Apply after completing (or substantially progressing) any of:
+
+- **Feature work** — SMBIOS changes, setup menu options, new drivers, PCD/token changes, platform config
+- **Bugfix work** — boot hang, build failure, runtime crash, regression fixes
+- **Process discoveries** — new build steps, Docker/workflow fixes, validation procedures worth reusing
+
+## Where to Write
+
+| Work type | Location | Filename pattern |
+|-----------|----------|------------------|
+| Feature / how-to implement | `development-guides/playbooks/` | `kebab-case-topic.md` |
+| Bug / incident fix | `troubleshooting/runbooks/` | `kebab-case-symptom.md` |
+| Release / version bump | `development-guides/VersionList.xlsx` + optional `CHANGELOG.md` | Per BIOS-Release-Version-Rules.md |
+
+Always update the **index README** in that folder and link from `development-guides/README.md` or `troubleshooting/README.md` when adding a new document.
+
+## Required Workflow
+
+1. **Check existing docs** — Search playbooks/runbooks before writing; update an existing doc if the topic matches.
+2. **Write or update** — Use the templates in each folder (`TEMPLATE-*.md`).
+3. **Index** — Add a link in the folder `README.md`.
+4. **Report to user** — List every knowledge-base file created or updated and ask for review before committing KB changes (unless user says to commit).
+
+For detailed steps, use the **knowledge-capture** skill (`.cursor/skills/knowledge-capture/SKILL.md`).
+
+## What to Include
+
+- Goal, platform/SKU, files touched, PCDs/tokens/HII if relevant
+- Build and validation commands (Docker golden image: `uefi-edk2-golden:latest`)
+- Root cause (bugs) and verification steps
+- Related issue ID (e.g. FWB-xxx) if applicable
+
+## What NOT to Put in the Knowledge Base
+
+- Full build logs or large diffs
+- Secrets, credentials, or customer-specific serial numbers
+- One-off debug output with no reusable value
+- Temporary status — use repo `BUILD_*.md` / issue notes for transient state
+
+## Enforcement
+
+- NEVER mark a feature or bugfix task "done" without a KB update path listed for the user
+- If the user says "skip KB update", note that in the reply and suggest capturing later
+- Prefer updating existing playbooks/runbooks over creating duplicates

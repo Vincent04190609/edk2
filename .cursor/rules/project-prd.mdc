@@ -1,0 +1,104 @@
+---
+description: Product Requirements Document (PRD) - Complete product requirements for the EDK2 BIOS firmware development project
+alwaysApply: true
+---
+
+# BIOS Project Documentation
+
+This file contains codebase context and development guidelines for the BIOS project.
+
+
+
+## Knowledge Base
+
+**Path variables (single source of truth)**: see **`project-knowledge.mdc`** — `PROJECT_NAME`, `PROJECT_KB_ROOT`, `COMMON_KB_ROOT`. Do not hardcode project folder names elsewhere.
+
+### Two layers
+
+| Layer | Config variable | Role |
+|-------|-----------------|------|
+| **Common** | `COMMON_KB_ROOT` | Shared specs, coding rules, commit rules (all projects) |
+| **Project** | `PROJECT_KB_ROOT` | Playbooks, runbooks, Docker build, versioning (this product) |
+
+### Project knowledge (current: `PROJECT_NAME` = Onboarding)
+
+**Entry**: `PROJECT_KB_README` = `{PROJECT_KB_ROOT}\README.md` (derived in `project-knowledge.mdc`)
+
+Under `PROJECT_KB_ROOT`:
+
+- **Development Guides** (`./development-guides/`) — build, release, playbooks
+- **Architecture** (`./architecture/`)
+- **Troubleshooting** (`./troubleshooting/`) — runbooks
+- **Onboarding** (`./onboarding/`) — environment setup
+
+### Common knowledge (from project KB, use `COMMON_FROM_PROJECT`)
+
+- **UEFI** — `../../Common/Industry-Standard-Documentation/UEFI-Spec/UEFI.md`
+- **SMBIOS** — `../../Common/Industry-Standard-Documentation/SMBIOS-Spec/SMBIOS.md`
+- **ACPI** — `../../Common/Industry-Standard-Documentation/ACP-Spec/ACPI.md`
+- **EDK2 coding rules** — `../../Common/Coding-Rule/EDK2_Coding_Rules.md`
+- **Commit rules** — `../../Common/Commit-Rule/Commit-Rule.md`
+
+Paths `../../Common/...` are relative to `PROJECT_KB_ROOT`, not the edk2 source tree.
+
+**Quick access**: Read `PROJECT_KB_README`, then `PROJECT_KB_ROOT/PROJECT.md` for project variables.
+
+### Knowledge write-back (after feature or bugfix)
+
+After implementing a feature or fixing a bug, agents MUST update the knowledge base (playbooks, runbooks, or version log). See `.cursor/rules/knowledge-capture.mdc` and the **knowledge-capture** skill.
+
+
+## Repository Setup
+
+**Critical**: Configure git to handle line ending differences between Windows and Ubuntu environments.
+
+### Clone Strategy
+
+```bash
+# Configure git to preserve line endings (prevents CR issues between Windows/Ubuntu)
+git config --global core.autocrlf false
+
+# Clone with submodules
+git clone --recurse-submodules https://github.com/Vincent04190609/edk2.git
+cd edk2
+```
+
+**Why this configuration matters**:
+- `core.autocrlf false` prevents automatic CRLF conversion that causes build issues when moving code between Windows development and Ubuntu testing environments
+- `--recurse-submodules` ensures all EDK2 dependencies are cloned in one step
+- This strategy must be followed by all developers to maintain consistent line endings across environments
+
+
+## Code Review and PR Collaboration Protocol
+
+Established in FWB-171 to prevent coordination gaps between code review, approval, and merge.
+
+### Protocol Overview
+
+When code review findings require fixes, CTO/reviewers must follow collaborative paths instead of independent "review→delegate→approve" cycles.
+
+### Required Process
+
+**Path A - Collaborative Fix** (for straightforward code quality issues):
+1. Post review findings as a comment on the PR/issue
+2. Tag the engineer directly (e.g., @BIOS-Engineer)
+3. Engage in real-time discussion on the issue thread
+4. Work together to resolve findings
+5. Only after collaborative alignment, approve the PR
+6. Coordinate with DevOps Engineer for merge strategy and timing
+
+**Path B - Board Escalation** (for significant issues):
+1. Document findings clearly
+2. Escalate to CEO/board for approval before creating fix tasks
+3. Wait for board sign-off on approach
+4. Then proceed with implementation
+
+### Key Requirements
+
+- ✅ Use GitHub's formal approval mechanism (not just approval comments)
+- ✅ Tag relevant engineers and coordinate in real-time
+- ✅ Discuss merge strategy with DevOps before merging
+- ✅ Make collaboration visible through issue/PR threads
+- ❌ No silent "review→delegate→approve" without engineer engagement
+- ❌ No manual merges without following protocol steps
+

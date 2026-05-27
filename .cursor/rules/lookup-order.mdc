@@ -1,0 +1,65 @@
+---
+description: MANDATORY knowledge lookup order - Enforces that AI agents always consult the Primary Knowledge Repository before searching source code
+alwaysApply: true
+---
+
+# MANDATORY: Knowledge Lookup Order
+
+**This rule overrides the default behavior of searching source code directly.**
+
+Before searching, reading, or grepping ANY source code in this repository, you MUST follow the lookup order below. NEVER skip to source code directly.
+
+## Step 0 — Resolve project paths
+
+Read variables from **`project-knowledge.mdc`**: `PROJECT_NAME`, `PROJECT_KB_ROOT`, `COMMON_KB_ROOT`, `COMMON_FROM_PROJECT`.
+
+Compute **`PROJECT_KB_README`** = `{PROJECT_KB_ROOT}\README.md` (do not use a stale path from another project).
+
+## Step 1 — Read the project knowledge base FIRST
+
+**ALWAYS start here**: `PROJECT_KB_README` (README under `PROJECT_KB_ROOT` for the current `PROJECT_NAME`).
+
+Read that file and identify the relevant subdirectory for the user's question.
+
+## Step 2 — Navigate to the Relevant Subdirectory
+
+Based on the topic, read the README.md in the matching subdirectory:
+
+| Topic | Go to |
+|-------|-------|
+| Build, compile, Docker, toolchain | `./development-guides/README.md` |
+| Coding standards, formatting | `./development-guides/README.md` |
+| Commit rules, versioning, release | `./development-guides/README.md` |
+| System design, component relationships | `./architecture/` |
+| Bugs, debug, errors, boot failures | `./troubleshooting/` |
+| Environment setup, first build | `./onboarding/` |
+| UEFI spec, protocols | `../../Common/Industry-Standard-Documentation/UEFI-Spec/UEFI.md` |
+| SMBIOS spec, data tables | `../../Common/Industry-Standard-Documentation/SMBIOS-Spec/SMBIOS.md` |
+| ACPI spec, tables | `../../Common/Industry-Standard-Documentation/ACP-Spec/ACPI.md` |
+| EDK2 coding rules | `../../Common/Coding-Rule/EDK2_Coding_Rules.md` |
+| Commit message format | `../../Common/Commit-Rule/Commit-Rule.md` |
+| Feature implementation (how-to) | `./development-guides/playbooks/` |
+| Bug fixes (symptom → fix) | `./troubleshooting/runbooks/` |
+
+Paths in the table above are relative to **`PROJECT_KB_ROOT`** unless they start with `COMMON_FROM_PROJECT` (`../../Common/...`), which points to **`COMMON_KB_ROOT`**.
+
+## Step 5 — Write Back After Feature or Bugfix Work
+
+After implementing a feature or fixing a bug, you MUST update the knowledge base per `knowledge-capture.mdc` and the **knowledge-capture** skill. A task is not complete until playbooks/runbooks (or version logs) are updated or the user explicitly opts out.
+
+## Step 3 — Follow Links Within the Knowledge Base
+
+The subdirectory README files contain links to specific documents. Follow those links to find the detailed answer.
+
+## Step 4 — ONLY THEN Search Source Code
+
+Search the repository source code ONLY when:
+- The knowledge base does not contain the answer, OR
+- The question is about a specific code implementation detail (e.g., "which line defines variable X?"), OR
+- You need to verify that code matches what the knowledge base describes
+
+## Enforcement
+
+- NEVER answer build, process, or standards questions from source code alone
+- ALWAYS cite the knowledge base document you referenced
+- If the knowledge base contradicts the source code, flag the discrepancy to the user — the knowledge base is the intended source of truth for processes and procedures

@@ -1,0 +1,59 @@
+---
+description: Single source of truth for project vs common knowledge paths (PROJECT_NAME, PROJECT_KB_ROOT, COMMON_KB_ROOT)
+alwaysApply: true
+---
+
+# Project Knowledge Configuration
+
+**SINGLE SOURCE OF TRUTH** for knowledge-base paths. Other rules (`lookup-order`, `knowledge-capture`) and skills MUST use the variables below — do **not** hardcode project folder names like `Onboarding` in agent workflows.
+
+## Variables to edit when switching projects
+
+Edit **only these two** in this file (and mirror `PROJECT_NAME` / `PROJECT_KB_ROOT` in `PROJECT_KB_ROOT/PROJECT.md`):
+
+| Variable | Current value | Purpose |
+|----------|---------------|---------|
+| `PROJECT_NAME` | `Onboarding` | Product / knowledge-base project id |
+| `PROJECT_KB_ROOT` | `d:\VibeCoding\Projects\Onboarding` | Project-specific 2nd Brain (playbooks, runbooks, Docker, versioning) |
+
+## Derived variables (do not edit — compute from above)
+
+Agents MUST resolve these from `PROJECT_KB_ROOT` / layout; never leave them pointing at an old project.
+
+| Variable | Resolved as |
+|----------|-------------|
+| `PROJECT_KB_README` | `{PROJECT_KB_ROOT}\README.md` |
+| `COMMON_FROM_PROJECT` | `../../Common` (relative from `PROJECT_KB_ROOT` → `COMMON_KB_ROOT`) |
+
+Example: if `PROJECT_KB_ROOT` = `d:\VibeCoding\Projects\ProductX`, then `PROJECT_KB_README` = `d:\VibeCoding\Projects\ProductX\README.md`.
+
+## Shared / workspace variables (usually unchanged)
+
+| Variable | Current value | Purpose |
+|----------|---------------|---------|
+| `COMMON_KB_ROOT` | `d:\VibeCoding\Common` | Shared knowledge (specs, coding rules, commit rules) — all projects |
+| `CODE_REPO_ROOT` | `d:\SourceCode\BIOS_Project\EDK2_0526\edk2` | This edk2 workspace (firmware source) |
+| `CODE_REPO_URL` | `https://github.com/Vincent04190609/edk2.git` | Git remote for this code repo |
+
+## Two-Layer Knowledge Model
+
+| Layer | Root | Contains |
+|-------|------|----------|
+| **Common** | `COMMON_KB_ROOT` | UEFI / SMBIOS / ACPI specs, `Coding-Rule/`, `Commit-Rule/`, industry standards |
+| **Project** | `PROJECT_KB_ROOT` | `development-guides/`, `playbooks/`, `runbooks/`, `DockerImage/`, `VersionList.xlsx`, project architecture |
+
+## How Agents Resolve Paths
+
+1. **Project workflows** → compute `PROJECT_KB_README`, read it, then use paths under `PROJECT_KB_ROOT`.
+2. **Standards** → `COMMON_KB_ROOT` or `COMMON_FROM_PROJECT` from project docs.
+3. **Write-back** → only under `PROJECT_KB_ROOT` unless updating Common standards.
+4. **Markdown in project KB** → relative paths (`./development-guides/...`, `../../Common/...`).
+
+## Changing to Another Project
+
+1. Edit **`PROJECT_NAME`** and **`PROJECT_KB_ROOT`** in this file only.
+2. Update `PROJECT.md` at the new `PROJECT_KB_ROOT` (copy from another project if needed).
+3. Open the matching edk2 code workspace; update `CODE_REPO_ROOT` / `CODE_REPO_URL` here if that clone differs.
+4. `lookup-order` / `knowledge-capture` need no changes — they reference this file.
+
+See also: `project-prd.mdc` (repo setup, PR protocol), `project-prd-org.md` (full PRD).

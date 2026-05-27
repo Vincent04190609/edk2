@@ -207,6 +207,7 @@
   DxeHardwareInfoLib|OvmfPkg/Library/HardwareInfoLib/DxeHardwareInfoLib.inf
   ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
   HstiLib|MdePkg/Library/DxeHstiLib/DxeHstiLib.inf
+  OnboardingAcpiEcIoDispatchLib|OnboardingPkg/Library/OnboardingAcpiEcIoDispatchLib/OnboardingAcpiEcIoDispatchLib.inf
 
 !if $(SMM_REQUIRE) == FALSE
   LockBoxLib|OvmfPkg/Library/LockBoxLib/LockBoxBaseLib.inf
@@ -939,6 +940,7 @@
   #
   MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
   OvmfPkg/AcpiPlatformDxe/AcpiPlatformDxe.inf
+  OnboardingPkg/AcpiEcIoDispatchDxe/AcpiEcIoDispatchDxe.inf
   MdeModulePkg/Universal/Acpi/S3SaveStateDxe/S3SaveStateDxe.inf
   MdeModulePkg/Universal/Acpi/BootScriptExecutorDxe/BootScriptExecutorDxe.inf
   MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
