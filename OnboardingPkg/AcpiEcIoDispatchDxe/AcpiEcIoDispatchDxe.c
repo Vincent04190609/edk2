@@ -14,6 +14,7 @@
 
 STATIC ONBOARDING_ACPI_EC_IO_DISPATCH_PROTOCOL  mAcpiEcIoDispatch = {
   OnboardingAcpiEcIoDispatchLibProcessWrite,
+  OnboardingAcpiEcIoDispatchLibProcessRead,
   OnboardingAcpiEcIoDispatchLibRegister59D0,
   OnboardingAcpiEcIoDispatchLibFlush,
 };
@@ -44,7 +45,7 @@ AcpiEcIoDispatchDxeEntryPoint (
 
   DEBUG ((
     DEBUG_INFO,
-    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
+    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0 & 0xD2 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
     PcdGet16 (PcdAcpiEcDataPort),
     PcdGet16 (PcdAcpiEcCmdStatusPort)
     ));

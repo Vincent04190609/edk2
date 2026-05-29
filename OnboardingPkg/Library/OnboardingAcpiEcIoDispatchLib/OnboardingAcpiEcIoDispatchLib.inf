@@ -17,6 +17,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
   OnboardingPkg/OnboardingPkg.dec
 
 [LibraryClasses]
@@ -30,3 +31,4 @@
   gOnboardingPkgTokenSpaceGuid.PcdAcpiEc59MaxParamBytes
   gOnboardingPkgTokenSpaceGuid.PcdAcpiEcDataPort
   gOnboardingPkgTokenSpaceGuid.PcdAcpiEcCmdStatusPort
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString

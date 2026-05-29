@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-command 0xD0 state machine.
+  ACPI EC I/O dispatch library — cmd 0x59 (sub 0xD0 params, sub 0xD2 BIOS version).
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -11,10 +11,13 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
 
+#define ONBOARDING_ACPI_EC_59_D2_VERSION_MAX  64
+
 typedef enum {
   AcpiEcDispatchStateIdle = 0,
   AcpiEcDispatchStateWaitSubCmd,
   AcpiEcDispatchStateCollectParams,
+  AcpiEcDispatchStateReady59D2Read,
 } ACPI_EC_DISPATCH_STATE;
 
 STATIC ACPI_EC_DISPATCH_STATE       mState = AcpiEcDispatchStateIdle;
@@ -24,6 +27,9 @@ STATIC ONBOARDING_ACPI_EC_59_D0_HANDLER  mHandler59D0 = NULL;
 STATIC UINT8                        *mParamBuffer = NULL;
 STATIC UINTN                        mParamSize;
 STATIC UINTN                        mParamCapacity;
+STATIC CHAR8                        mBiosVersionReadBuf[ONBOARDING_ACPI_EC_59_D2_VERSION_MAX];
+STATIC UINTN                        mBiosVersionReadLen;
+STATIC UINTN                        mBiosVersionReadIndex;
 
 VOID
 EFIAPI
@@ -38,6 +44,9 @@ OnboardingAcpiEcIoDispatchLibInit (
   mParamBuffer     = NULL;
   mParamSize       = 0;
   mParamCapacity   = 0;
+  mBiosVersionReadLen   = 0;
+  mBiosVersionReadIndex = 0;
+  SetMem (mBiosVersionReadBuf, sizeof (mBiosVersionReadBuf), 0);
 }
 
 EFI_STATUS
@@ -95,6 +104,36 @@ EnsureParamCapacity (
 }
 
 STATIC
+VOID
+Prepare59D2VersionBuffer (
+  VOID
+  )
+{
+  CHAR16  *Vers;
+  UINTN   Index;
+
+  Vers = (CHAR16 *)PcdGetPtr (PcdFirmwareVersionString);
+  mBiosVersionReadLen   = 0;
+  mBiosVersionReadIndex = 0;
+  SetMem (mBiosVersionReadBuf, sizeof (mBiosVersionReadBuf), 0);
+
+  for (Index = 0; Index < (ONBOARDING_ACPI_EC_59_D2_VERSION_MAX - 1) && Vers[Index] != L'\0'; Index++) {
+    mBiosVersionReadBuf[Index] = (CHAR8)Vers[Index];
+    mBiosVersionReadLen++;
+  }
+
+  mBiosVersionReadBuf[mBiosVersionReadLen] = '\0';
+  mBiosVersionReadLen++;
+
+  DEBUG ((
+    DEBUG_INFO,
+    "AcpiEcDispatch: 59/D2 BIOS version ready (%u byte(s) incl. NUL): \"%a\"\n",
+    mBiosVersionReadLen,
+    mBiosVersionReadBuf
+    ));
+}
+
+STATIC
 EFI_STATUS
 DispatchCollectedParams (
   VOID
@@ -140,6 +179,11 @@ ProcessCmdPortWrite (
     (VOID)DispatchCollectedParams ();
   }
 
+  if (mState == AcpiEcDispatchStateReady59D2Read) {
+    mBiosVersionReadIndex = 0;
+    mBiosVersionReadLen   = 0;
+  }
+
   ResetParamBuffer ();
   mPendingCmd = Value;
   mPendingSubCmd = 0;
@@ -169,6 +213,13 @@ ProcessDataPortWrite (
       if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D0) {
         mState = AcpiEcDispatchStateCollectParams;
         DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD0, collecting params on 0x62\n"));
+        return EFI_SUCCESS;
+      }
+
+      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D2) {
+        Prepare59D2VersionBuffer ();
+        mState = AcpiEcDispatchStateReady59D2Read;
+        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD2, read BIOS version from 0x62\n"));
         return EFI_SUCCESS;
       }
 
@@ -226,6 +277,44 @@ OnboardingAcpiEcIoDispatchLibProcessWrite (
   }
 
   return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibProcessRead (
+  IN  UINT16  Port,
+  OUT UINT8   *Value
+  )
+{
+  UINT16  DataPort;
+
+  if (Value == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DataPort = PcdGet16 (PcdAcpiEcDataPort);
+  if (Port != DataPort) {
+    return EFI_UNSUPPORTED;
+  }
+
+  if (mState != AcpiEcDispatchStateReady59D2Read) {
+    *Value = 0;
+    return EFI_NOT_READY;
+  }
+
+  if (mBiosVersionReadIndex >= mBiosVersionReadLen) {
+    *Value = 0;
+    mState = AcpiEcDispatchStateIdle;
+    return EFI_SUCCESS;
+  }
+
+  *Value = (UINT8)mBiosVersionReadBuf[mBiosVersionReadIndex++];
+  if (mBiosVersionReadIndex >= mBiosVersionReadLen) {
+    mState = AcpiEcDispatchStateIdle;
+    DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D2 version read complete\n"));
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**

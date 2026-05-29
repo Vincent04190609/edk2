@@ -41,6 +41,19 @@ OnboardingAcpiEcIoDispatchLibProcessWrite (
   );
 
 /**
+  Process read from port 0x62 (e.g. BIOS version after cmd 0x59 / sub 0xD2).
+
+  @param[in]   Port   I/O port (typically 0x62).
+  @param[out]  Value  Byte returned to host.
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibProcessRead (
+  IN  UINT16  Port,
+  OUT UINT8   *Value
+  );
+
+/**
   Complete cmd 0x59 / 0xD0 and invoke the registered handler with collected params.
 **/
 EFI_STATUS
