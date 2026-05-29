@@ -509,9 +509,9 @@
 !endif
 
 [PcdsFixedAtBuild]
-  # SMBIOS Manufacturer and BIOS Version for T72
+  # SMBIOS Manufacturer and BIOS Version for T73
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vincent Inc"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T72"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T73"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
