@@ -22,12 +22,18 @@
 [LibraryClasses]
   UefiDriverEntryPoint
   UefiBootServicesTableLib
+  BaseLib
+  BaseMemoryLib
   DebugLib
   PcdLib
   OnboardingAcpiEcIoDispatchLib
 
 [Protocols]
   gOnboardingAcpiEcIoDispatchProtocolGuid               ## PRODUCES
+  gEfiSmbiosProtocolGuid                                ## CONSUMES
+
+[Depex]
+  gEfiSmbiosProtocolGuid
 
 [Pcd]
   gOnboardingPkgTokenSpaceGuid.PcdAcpiEcDataPort

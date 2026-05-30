@@ -28,6 +28,15 @@ OnboardingAcpiEcIoDispatchLibRegister59D0 (
   );
 
 /**
+  Register handler for command 0x59 / sub-command 0xD3.
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibRegister59D3 (
+  IN ONBOARDING_ACPI_EC_59_D3_HANDLER  Handler
+  );
+
+/**
   Process write to port 0x62 or 0x66.
 
   @param[in]  Port   I/O port (typically 0x62 or 0x66).
@@ -38,6 +47,19 @@ EFIAPI
 OnboardingAcpiEcIoDispatchLibProcessWrite (
   IN UINT16  Port,
   IN UINT8   Value
+  );
+
+/**
+  Process read from port 0x62 after a read-response sub-command (e.g. 0xD3).
+
+  @param[in]   Port   I/O port (typically 0x62).
+  @param[out]  Value  Byte returned to the host.
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibProcessRead (
+  IN  UINT16  Port,
+  OUT UINT8   *Value
   );
 
 /**
@@ -57,6 +79,17 @@ EFIAPI
 OnboardingAcpiEcIoDispatchLibDefault59D0Handler (
   IN CONST UINT8  *ParamData,
   IN UINTN        ParamSize
+  );
+
+/**
+  Built-in stub handler for 0x59 / 0xD3 (empty string). Replace via Register59D3().
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibDefault59D3Handler (
+  OUT CHAR8  *Response,
+  IN  UINTN   ResponseMax,
+  OUT UINTN  *ResponseLen
   );
 
 #endif // ONBOARDING_ACPI_EC_IO_DISPATCH_LIB_H_

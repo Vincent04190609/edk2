@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-command 0xD0 state machine.
+  ACPI EC I/O dispatch library — cmd 0x59 sub-commands 0xD0 (write) and 0xD3 (read).
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -15,15 +15,51 @@ typedef enum {
   AcpiEcDispatchStateIdle = 0,
   AcpiEcDispatchStateWaitSubCmd,
   AcpiEcDispatchStateCollectParams,
+  AcpiEcDispatchStateReadResponse,
 } ACPI_EC_DISPATCH_STATE;
 
-STATIC ACPI_EC_DISPATCH_STATE       mState = AcpiEcDispatchStateIdle;
-STATIC UINT8                        mPendingCmd;
-STATIC UINT8                        mPendingSubCmd;
+STATIC ACPI_EC_DISPATCH_STATE            mState = AcpiEcDispatchStateIdle;
+STATIC UINT8                             mPendingCmd;
+STATIC UINT8                             mPendingSubCmd;
 STATIC ONBOARDING_ACPI_EC_59_D0_HANDLER  mHandler59D0 = NULL;
-STATIC UINT8                        *mParamBuffer = NULL;
-STATIC UINTN                        mParamSize;
-STATIC UINTN                        mParamCapacity;
+STATIC ONBOARDING_ACPI_EC_59_D3_HANDLER  mHandler59D3 = NULL;
+STATIC UINT8                             *mParamBuffer = NULL;
+STATIC UINTN                             mParamSize;
+STATIC UINTN                             mParamCapacity;
+STATIC UINT8                             *mReadBuffer = NULL;
+STATIC UINTN                             mReadSize;
+STATIC UINTN                             mReadIndex;
+
+STATIC
+UINTN
+GetMaxResponseBytes (
+  VOID
+  )
+{
+  UINTN  MaxBytes;
+
+  MaxBytes = PcdGet16 (PcdAcpiEc59MaxParamBytes);
+  if (MaxBytes == 0) {
+    MaxBytes = 64;
+  }
+
+  return MaxBytes;
+}
+
+STATIC
+VOID
+ResetReadBuffer (
+  VOID
+  )
+{
+  if (mReadBuffer != NULL) {
+    FreePool (mReadBuffer);
+    mReadBuffer = NULL;
+  }
+
+  mReadSize  = 0;
+  mReadIndex = 0;
+}
 
 VOID
 EFIAPI
@@ -35,9 +71,13 @@ OnboardingAcpiEcIoDispatchLibInit (
   mPendingCmd      = 0;
   mPendingSubCmd   = 0;
   mHandler59D0     = NULL;
+  mHandler59D3     = NULL;
   mParamBuffer     = NULL;
   mParamSize       = 0;
   mParamCapacity   = 0;
+  mReadBuffer      = NULL;
+  mReadSize        = 0;
+  mReadIndex       = 0;
 }
 
 EFI_STATUS
@@ -47,6 +87,16 @@ OnboardingAcpiEcIoDispatchLibRegister59D0 (
   )
 {
   mHandler59D0 = Handler;
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibRegister59D3 (
+  IN ONBOARDING_ACPI_EC_59_D3_HANDLER  Handler
+  )
+{
+  mHandler59D3 = Handler;
   return EFI_SUCCESS;
 }
 
@@ -72,10 +122,7 @@ EnsureParamCapacity (
 {
   UINTN  MaxBytes;
 
-  MaxBytes = PcdGet16 (PcdAcpiEc59MaxParamBytes);
-  if (MaxBytes == 0) {
-    MaxBytes = 64;
-  }
+  MaxBytes = GetMaxResponseBytes ();
 
   if (mParamBuffer == NULL) {
     mParamBuffer = AllocateZeroPool (MaxBytes);
@@ -113,8 +160,8 @@ DispatchCollectedParams (
   Params = mParamBuffer;
   Size   = mParamSize;
 
-  mParamBuffer = NULL;
-  mParamSize   = 0;
+  mParamBuffer   = NULL;
+  mParamSize     = 0;
   mParamCapacity = 0;
 
   if (mHandler59D0 != NULL) {
@@ -132,6 +179,58 @@ DispatchCollectedParams (
 
 STATIC
 EFI_STATUS
+PrepareReadResponse (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       MaxBytes;
+  UINTN       ResponseLen;
+
+  ResetReadBuffer ();
+
+  MaxBytes = GetMaxResponseBytes ();
+  mReadBuffer = AllocateZeroPool (MaxBytes);
+  if (mReadBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  if (mHandler59D3 != NULL) {
+    Status = mHandler59D3 ((CHAR8 *)mReadBuffer, MaxBytes, &ResponseLen);
+  } else {
+    Status = OnboardingAcpiEcIoDispatchLibDefault59D3Handler ((CHAR8 *)mReadBuffer, MaxBytes, &ResponseLen);
+  }
+
+  if (EFI_ERROR (Status)) {
+    ResetReadBuffer ();
+    return Status;
+  }
+
+  if (ResponseLen == 0) {
+    mReadBuffer[0] = 0;
+    ResponseLen    = 1;
+  } else if (ResponseLen > MaxBytes) {
+    ResetReadBuffer ();
+    return EFI_BUFFER_TOO_SMALL;
+  } else if (mReadBuffer[ResponseLen - 1] != 0) {
+    if (ResponseLen >= MaxBytes) {
+      ResetReadBuffer ();
+      return EFI_BUFFER_TOO_SMALL;
+    }
+
+    mReadBuffer[ResponseLen] = 0;
+    ResponseLen++;
+  }
+
+  mReadSize  = ResponseLen;
+  mReadIndex = 0;
+  mState     = AcpiEcDispatchStateReadResponse;
+  DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D3 serial number ready (%u byte(s))\n", ResponseLen));
+  return EFI_SUCCESS;
+}
+
+STATIC
+EFI_STATUS
 ProcessCmdPortWrite (
   IN UINT8  Value
   )
@@ -141,7 +240,8 @@ ProcessCmdPortWrite (
   }
 
   ResetParamBuffer ();
-  mPendingCmd = Value;
+  ResetReadBuffer ();
+  mPendingCmd    = Value;
   mPendingSubCmd = 0;
 
   if (Value == ONBOARDING_ACPI_EC_CMD_VENDOR_59) {
@@ -170,6 +270,16 @@ ProcessDataPortWrite (
         mState = AcpiEcDispatchStateCollectParams;
         DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD0, collecting params on 0x62\n"));
         return EFI_SUCCESS;
+      }
+
+      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D3) {
+        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD3, preparing serial read on 0x62\n"));
+        Status = PrepareReadResponse ();
+        if (EFI_ERROR (Status)) {
+          mState = AcpiEcDispatchStateIdle;
+        }
+
+        return Status;
       }
 
       DEBUG ((DEBUG_WARN, "AcpiEcDispatch: cmd 0x59 unknown sub-command 0x%02x\n", Value));
@@ -228,10 +338,41 @@ OnboardingAcpiEcIoDispatchLibProcessWrite (
   return EFI_UNSUPPORTED;
 }
 
-/**
-  Finalize parameter collection (e.g. when host signals end of command).
-  Call from platform EC driver when the command sequence completes.
-**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibProcessRead (
+  IN  UINT16  Port,
+  OUT UINT8   *Value
+  )
+{
+  UINT16  DataPort;
+
+  if (Value == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DataPort = PcdGet16 (PcdAcpiEcDataPort);
+  if (Port != DataPort) {
+    return EFI_UNSUPPORTED;
+  }
+
+  if (mState != AcpiEcDispatchStateReadResponse) {
+    return EFI_NOT_READY;
+  }
+
+  if (mReadIndex >= mReadSize) {
+    mState = AcpiEcDispatchStateIdle;
+    return EFI_NOT_READY;
+  }
+
+  *Value = mReadBuffer[mReadIndex++];
+  if (mReadIndex >= mReadSize) {
+    mState = AcpiEcDispatchStateIdle;
+  }
+
+  return EFI_SUCCESS;
+}
+
 EFI_STATUS
 EFIAPI
 OnboardingAcpiEcIoDispatchLibFlush (
@@ -263,5 +404,23 @@ OnboardingAcpiEcIoDispatchLibDefault59D0Handler (
     DEBUG ((DEBUG_INFO, "  [%u] = 0x%02x\n", Index, ParamData[Index]));
   }
 
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibDefault59D3Handler (
+  OUT CHAR8  *Response,
+  IN  UINTN   ResponseMax,
+  OUT UINTN  *ResponseLen
+  )
+{
+  if ((Response == NULL) || (ResponseMax == 0) || (ResponseLen == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Response[0]  = 0;
+  *ResponseLen = 1;
+  DEBUG ((DEBUG_WARN, "AcpiEcDispatch 59/D3: no handler registered, returning empty serial\n"));
   return EFI_SUCCESS;
 }

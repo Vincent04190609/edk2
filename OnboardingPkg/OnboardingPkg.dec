@@ -23,9 +23,9 @@
   gOnboardingAcpiEcIoDispatchProtocolGuid = { 0x7C4E9A2B, 0x5D1F, 0x4A8E, { 0x9B, 0x3C, 0x2D, 0x4E, 0x5F, 0x6A, 0x7B, 0x8C }}
 
 [PcdsFixedAtBuild]
-  ## Max parameter bytes collected on port 0x62 after sub-command for cmd 0x59.
-  gOnboardingPkgTokenSpaceGuid.PcdAcpiEc59MaxParamBytes|64
+  ## Max parameter/response bytes for cmd 0x59 on port 0x62.
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEc59MaxParamBytes|64|UINT16|0x00000001
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
-  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcDataPort|0x62
-  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcCmdStatusPort|0x66
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcDataPort|0x62|UINT16|0x00000002
+  gOnboardingPkgTokenSpaceGuid.PcdAcpiEcCmdStatusPort|0x66|UINT16|0x00000003
