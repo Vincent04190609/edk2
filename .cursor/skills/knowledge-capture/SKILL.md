@@ -25,7 +25,7 @@ Captures reusable FW engineering knowledge into the Primary Knowledge Repository
 |-----------|---------------|---------------|
 | New feature, enhancement, config change | **Playbook** | `development-guides/playbooks/` |
 | Bug fix, boot hang, regression | **Runbook** | `troubleshooting/runbooks/` |
-| Release / test or formal version | **Version log** | `development-guides/VersionList.xlsx` (+ `CHANGELOG.md` if used) |
+| Release / test or formal version | **Version log** | Run **bios-release-version** skill first → `development-guides/VersionList.xlsx` (+ `CHANGELOG.md` if used) |
 
 ## Workflow
 
@@ -53,9 +53,10 @@ Use **kebab-case** filenames (e.g. `smbios-add-serial-number.md`, `power-on-hang
 
 If the work produced a new **test** (Txx) or **formal** (xx.xx) BIOS version:
 
-1. Read `development-guides/BIOS-Release-Version-Rules.md`.
-2. Update `development-guides/VersionList.xlsx` (use the **xlsx** skill to read/write).
-3. Optionally add a line to `development-guides/CHANGELOG.md`.
+1. Run the **bios-release-version** skill (`.cursor/skills/bios-release-version/SKILL.md`) — this handles Excel read/increment/write, verification, and `.dsc` update.
+2. Optionally add a line to `development-guides/CHANGELOG.md` after the release skill completes.
+
+Do **not** guess the next version or skip Excel — delegate entirely to **bios-release-version**.
 
 ### Step 5 — Hand off to user
 
@@ -129,5 +130,6 @@ Task done. Update project knowledge base (playbook or runbook) and show paths fo
 
 - `.cursor/rules/knowledge-capture.mdc` — enforcement
 - `.cursor/rules/lookup-order.mdc` — read order
-- `development-guides/BIOS-Release-Version-Rules.md` — versioning
+- `.cursor/skills/bios-release-version/SKILL.md` — Test/Formal version bump workflow
+- `development-guides/BIOS-Release-Version-Rules.md` — versioning rules (referenced by bios-release-version skill)
 - `DockerImage/README.md` — build environment
