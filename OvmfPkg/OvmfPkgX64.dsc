@@ -511,7 +511,7 @@
 [PcdsFixedAtBuild]
   # SMBIOS Manufacturer and BIOS Version for T74
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vincent Inc"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T74"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T77"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE

@@ -28,6 +28,15 @@ OnboardingAcpiEcIoDispatchLibRegister59D0 (
   );
 
 /**
+  Register handler for command 0x59 / sub-command 0xD1.
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibRegister59D1 (
+  IN ONBOARDING_ACPI_EC_59_D1_HANDLER  Handler
+  );
+
+/**
   Process write to port 0x62 or 0x66.
 
   @param[in]  Port   I/O port (typically 0x62 or 0x66).
@@ -38,6 +47,16 @@ EFIAPI
 OnboardingAcpiEcIoDispatchLibProcessWrite (
   IN UINT16  Port,
   IN UINT8   Value
+  );
+
+/**
+  Process read from port 0x62 (BIOS version response after cmd 0x59 / sub 0xD1).
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibProcessRead (
+  IN  UINT16  Port,
+  OUT UINT8   *Value
   );
 
 /**
@@ -57,6 +76,17 @@ EFIAPI
 OnboardingAcpiEcIoDispatchLibDefault59D0Handler (
   IN CONST UINT8  *ParamData,
   IN UINTN        ParamSize
+  );
+
+/**
+  Built-in handler for 0x59 / 0xD1 (PcdFirmwareVersionString). Replace via Register59D1().
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibDefault59D1Handler (
+  OUT CHAR8   *VersionAscii,
+  IN  UINTN   BufferSize,
+  OUT UINTN   *VersionLength
   );
 
 #endif // ONBOARDING_ACPI_EC_IO_DISPATCH_LIB_H_
