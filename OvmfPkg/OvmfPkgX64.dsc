@@ -509,9 +509,9 @@
 !endif
 
 [PcdsFixedAtBuild]
-  # SMBIOS Manufacturer and BIOS Version for T74
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vincent Inc"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T74"
+  # SMBIOS Manufacturer and BIOS Version for T76
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vibe-Factory"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T76"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
