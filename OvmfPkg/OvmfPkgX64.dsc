@@ -511,7 +511,7 @@
 [PcdsFixedAtBuild]
   # SMBIOS Manufacturer and BIOS Version for T76
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vibe-Factory"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T76"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T77"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE

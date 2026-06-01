@@ -17,6 +17,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
   OnboardingPkg/OnboardingPkg.dec
 
 [LibraryClasses]
@@ -24,10 +25,16 @@
   UefiBootServicesTableLib
   DebugLib
   PcdLib
+  BaseLib
+  BaseMemoryLib
   OnboardingAcpiEcIoDispatchLib
 
 [Protocols]
   gOnboardingAcpiEcIoDispatchProtocolGuid               ## PRODUCES
+  gEfiSmbiosProtocolGuid                                ## CONSUMES
+
+[Depex]
+  gEfiSmbiosProtocolGuid
 
 [Pcd]
   gOnboardingPkgTokenSpaceGuid.PcdAcpiEcDataPort

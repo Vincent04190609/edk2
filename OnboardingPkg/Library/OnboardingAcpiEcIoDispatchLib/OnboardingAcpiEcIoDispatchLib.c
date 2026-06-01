@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-command 0xD0 state machine.
+  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0 (params) and 0xD5 (serial read).
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -15,6 +15,7 @@ typedef enum {
   AcpiEcDispatchStateIdle = 0,
   AcpiEcDispatchStateWaitSubCmd,
   AcpiEcDispatchStateCollectParams,
+  AcpiEcDispatchStateReadResponse,
 } ACPI_EC_DISPATCH_STATE;
 
 STATIC ACPI_EC_DISPATCH_STATE       mState = AcpiEcDispatchStateIdle;
@@ -24,6 +25,8 @@ STATIC ONBOARDING_ACPI_EC_59_D0_HANDLER  mHandler59D0 = NULL;
 STATIC UINT8                        *mParamBuffer = NULL;
 STATIC UINTN                        mParamSize;
 STATIC UINTN                        mParamCapacity;
+STATIC CHAR8                        mSerial59D5[ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX + 1];
+STATIC UINTN                        mSerial59D5ReadIndex;
 
 VOID
 EFIAPI
@@ -31,13 +34,38 @@ OnboardingAcpiEcIoDispatchLibInit (
   VOID
   )
 {
-  mState           = AcpiEcDispatchStateIdle;
-  mPendingCmd      = 0;
-  mPendingSubCmd   = 0;
-  mHandler59D0     = NULL;
-  mParamBuffer     = NULL;
-  mParamSize       = 0;
-  mParamCapacity   = 0;
+  mState                 = AcpiEcDispatchStateIdle;
+  mPendingCmd            = 0;
+  mPendingSubCmd         = 0;
+  mHandler59D0           = NULL;
+  mParamBuffer           = NULL;
+  mParamSize             = 0;
+  mParamCapacity         = 0;
+  mSerial59D5[0]         = '\0';
+  mSerial59D5ReadIndex   = 0;
+}
+
+VOID
+EFIAPI
+OnboardingAcpiEcIoDispatchLibSet59D5Serial (
+  IN CONST CHAR8  *SerialAscii
+  )
+{
+  UINTN  CopyLen;
+
+  if (SerialAscii == NULL) {
+    mSerial59D5[0] = '\0';
+    return;
+  }
+
+  CopyLen = AsciiStrLen (SerialAscii);
+  if (CopyLen > ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX) {
+    CopyLen = ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX;
+  }
+
+  CopyMem (mSerial59D5, SerialAscii, CopyLen);
+  mSerial59D5[CopyLen] = '\0';
+  DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D5 serial cached (%u bytes): %a\n", CopyLen, mSerial59D5));
 }
 
 EFI_STATUS
@@ -58,9 +86,9 @@ ResetParamBuffer (
 {
   if (mParamBuffer != NULL) {
     FreePool (mParamBuffer);
-    mParamBuffer   = NULL;
-    mParamSize     = 0;
-    mParamCapacity = 0;
+    mParamBuffer     = NULL;
+    mParamSize       = 0;
+    mParamCapacity   = 0;
   }
 }
 
@@ -113,8 +141,8 @@ DispatchCollectedParams (
   Params = mParamBuffer;
   Size   = mParamSize;
 
-  mParamBuffer = NULL;
-  mParamSize   = 0;
+  mParamBuffer   = NULL;
+  mParamSize     = 0;
   mParamCapacity = 0;
 
   if (mHandler59D0 != NULL) {
@@ -141,8 +169,9 @@ ProcessCmdPortWrite (
   }
 
   ResetParamBuffer ();
-  mPendingCmd = Value;
+  mPendingCmd    = Value;
   mPendingSubCmd = 0;
+  mSerial59D5ReadIndex = 0;
 
   if (Value == ONBOARDING_ACPI_EC_CMD_VENDOR_59) {
     mState = AcpiEcDispatchStateWaitSubCmd;
@@ -169,6 +198,13 @@ ProcessDataPortWrite (
       if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D0) {
         mState = AcpiEcDispatchStateCollectParams;
         DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD0, collecting params on 0x62\n"));
+        return EFI_SUCCESS;
+      }
+
+      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D5) {
+        mState               = AcpiEcDispatchStateReadResponse;
+        mSerial59D5ReadIndex = 0;
+        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD5, serial read ready on 0x62\n"));
         return EFI_SUCCESS;
       }
 
@@ -199,9 +235,38 @@ ProcessDataPortWrite (
       return EFI_SUCCESS;
 
     default:
-      DEBUG ((DEBUG_VERBOSE, "AcpiEcDispatch: data 0x%02x ignored (state idle)\n", Value));
+      DEBUG ((DEBUG_VERBOSE, "AcpiEcDispatch: data 0x%02x ignored (state %u)\n", Value, mState));
       return EFI_NOT_READY;
   }
+}
+
+STATIC
+EFI_STATUS
+ProcessDataPortRead (
+  OUT UINT8  *Value
+  )
+{
+  CHAR8  Byte;
+
+  if (mState != AcpiEcDispatchStateReadResponse) {
+    return EFI_NOT_READY;
+  }
+
+  if (mPendingSubCmd != ONBOARDING_ACPI_EC_SUBCMD_59_D5) {
+    return EFI_UNSUPPORTED;
+  }
+
+  Byte = mSerial59D5[mSerial59D5ReadIndex];
+  *Value = (UINT8)Byte;
+
+  if (Byte == '\0') {
+    mState = AcpiEcDispatchStateIdle;
+    DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D5 serial read complete\n"));
+    return EFI_SUCCESS;
+  }
+
+  mSerial59D5ReadIndex++;
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -228,10 +293,27 @@ OnboardingAcpiEcIoDispatchLibProcessWrite (
   return EFI_UNSUPPORTED;
 }
 
-/**
-  Finalize parameter collection (e.g. when host signals end of command).
-  Call from platform EC driver when the command sequence completes.
-**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibProcessRead (
+  IN  UINT16  Port,
+  OUT UINT8   *Value
+  )
+{
+  UINT16  DataPort;
+
+  if (Value == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DataPort = PcdGet16 (PcdAcpiEcDataPort);
+  if (Port != DataPort) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return ProcessDataPortRead (Value);
+}
+
 EFI_STATUS
 EFIAPI
 OnboardingAcpiEcIoDispatchLibFlush (

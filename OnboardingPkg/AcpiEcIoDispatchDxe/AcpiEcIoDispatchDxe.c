@@ -5,20 +5,106 @@
 **/
 
 #include <Uefi.h>
+#include <IndustryStandard/SmBios.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
+#include <Library/BaseLib.h>
+#include <Library/BaseMemoryLib.h>
 #include <Library/OnboardingAcpiEcIoDispatchLib.h>
 #include <Protocol/OnboardingAcpiEcIoDispatch.h>
+#include <Protocol/Smbios.h>
 
 STATIC ONBOARDING_ACPI_EC_IO_DISPATCH_PROTOCOL  mAcpiEcIoDispatch = {
   OnboardingAcpiEcIoDispatchLibProcessWrite,
+  OnboardingAcpiEcIoDispatchLibProcessRead,
   OnboardingAcpiEcIoDispatchLibRegister59D0,
   OnboardingAcpiEcIoDispatchLibFlush,
 };
 
 STATIC EFI_HANDLE  mHandle = NULL;
+
+STATIC
+CHAR8 *
+GetSmbiosStringByIndex (
+  IN CHAR8  *OptionalStrStart,
+  IN UINT8  Index
+  )
+{
+  UINTN  StrSize;
+
+  if ((OptionalStrStart == NULL) || (Index == 0)) {
+    return NULL;
+  }
+
+  do {
+    Index--;
+    if (Index == 0) {
+      return OptionalStrStart;
+    }
+
+    StrSize = AsciiStrSize (OptionalStrStart);
+    OptionalStrStart += StrSize;
+  } while (*OptionalStrStart != 0);
+
+  return NULL;
+}
+
+STATIC
+EFI_STATUS
+LoadSmbiosType1Serial (
+  VOID
+  )
+{
+  EFI_STATUS                Status;
+  EFI_SMBIOS_PROTOCOL       *Smbios;
+  EFI_SMBIOS_HANDLE         SmbiosHandle;
+  EFI_SMBIOS_TYPE           SmbiosType;
+  EFI_SMBIOS_TABLE_HEADER   *Record;
+  SMBIOS_TABLE_TYPE1        *Type1;
+  CHAR8                     *Serial;
+
+  Status = gBS->LocateProtocol (
+                  &gEfiSmbiosProtocolGuid,
+                  NULL,
+                  (VOID **)&Smbios
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Smbios protocol not found %r\n", Status));
+    OnboardingAcpiEcIoDispatchLibSet59D5Serial ("");
+    return Status;
+  }
+
+  SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
+  SmbiosType   = EFI_SMBIOS_TYPE_SYSTEM_INFORMATION;
+  Status       = Smbios->GetNext (
+                           Smbios,
+                           &SmbiosHandle,
+                           &SmbiosType,
+                           &Record,
+                           NULL
+                           );
+  if (EFI_ERROR (Status) || (Record == NULL)) {
+    DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Type 1 SMBIOS record not found %r\n", Status));
+    OnboardingAcpiEcIoDispatchLibSet59D5Serial ("");
+    return EFI_NOT_FOUND;
+  }
+
+  Type1  = (SMBIOS_TABLE_TYPE1 *)Record;
+  Serial = GetSmbiosStringByIndex (
+             (CHAR8 *)Record + Record->Length,
+             Type1->SerialNumber
+             );
+  if ((Serial == NULL) || (Serial[0] == '\0')) {
+    DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Type 1 serial string missing\n"));
+    OnboardingAcpiEcIoDispatchLibSet59D5Serial ("");
+    return EFI_NOT_FOUND;
+  }
+
+  OnboardingAcpiEcIoDispatchLibSet59D5Serial (Serial);
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS
 EFIAPI
@@ -30,6 +116,7 @@ AcpiEcIoDispatchDxeEntryPoint (
   EFI_STATUS  Status;
 
   OnboardingAcpiEcIoDispatchLibInit ();
+  (VOID)LoadSmbiosType1Serial ();
 
   Status = gBS->InstallProtocolInterface (
                   &mHandle,
@@ -44,7 +131,7 @@ AcpiEcIoDispatchDxeEntryPoint (
 
   DEBUG ((
     DEBUG_INFO,
-    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
+    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0 and 0xD5 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
     PcdGet16 (PcdAcpiEcDataPort),
     PcdGet16 (PcdAcpiEcCmdStatusPort)
     ));

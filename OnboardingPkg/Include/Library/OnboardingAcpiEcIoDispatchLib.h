@@ -19,6 +19,17 @@ OnboardingAcpiEcIoDispatchLibInit (
   );
 
 /**
+  Cache SMBIOS Type 1 serial for cmd 0x59 / sub-command 0xD5 read-back.
+
+  @param[in]  SerialAscii  NUL-terminated ASCII serial (truncated if too long).
+**/
+VOID
+EFIAPI
+OnboardingAcpiEcIoDispatchLibSet59D5Serial (
+  IN CONST CHAR8  *SerialAscii
+  );
+
+/**
   Register handler for command 0x59 / sub-command 0xD0.
 **/
 EFI_STATUS
@@ -38,6 +49,19 @@ EFIAPI
 OnboardingAcpiEcIoDispatchLibProcessWrite (
   IN UINT16  Port,
   IN UINT8   Value
+  );
+
+/**
+  Process read from port 0x62 (sub-command 0xD5 response stream).
+
+  @param[in]   Port   I/O port (typically 0x62).
+  @param[out]  Value  Byte returned to host.
+**/
+EFI_STATUS
+EFIAPI
+OnboardingAcpiEcIoDispatchLibProcessRead (
+  IN  UINT16  Port,
+  OUT UINT8   *Value
   );
 
 /**
