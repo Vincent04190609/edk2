@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0 (params) and 0xD5 (serial read).
+  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5 (serial), 0xD6 (manufacturer).
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -25,8 +25,10 @@ STATIC ONBOARDING_ACPI_EC_59_D0_HANDLER  mHandler59D0 = NULL;
 STATIC UINT8                        *mParamBuffer = NULL;
 STATIC UINTN                        mParamSize;
 STATIC UINTN                        mParamCapacity;
-STATIC CHAR8                        mSerial59D5[ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX + 1];
+STATIC CHAR8                        mSerial59D5[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
 STATIC UINTN                        mSerial59D5ReadIndex;
+STATIC CHAR8                        mManufacturer59D6[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
+STATIC UINTN                        mManufacturer59D6ReadIndex;
 
 VOID
 EFIAPI
@@ -41,8 +43,35 @@ OnboardingAcpiEcIoDispatchLibInit (
   mParamBuffer           = NULL;
   mParamSize             = 0;
   mParamCapacity         = 0;
-  mSerial59D5[0]         = '\0';
-  mSerial59D5ReadIndex   = 0;
+  mSerial59D5[0]             = '\0';
+  mSerial59D5ReadIndex       = 0;
+  mManufacturer59D6[0]       = '\0';
+  mManufacturer59D6ReadIndex = 0;
+}
+
+STATIC
+VOID
+Cache59String (
+  IN CHAR8        *Dest,
+  IN CONST CHAR8  *Source,
+  IN CONST CHAR8  *LogLabel
+  )
+{
+  UINTN  CopyLen;
+
+  if (Source == NULL) {
+    Dest[0] = '\0';
+    return;
+  }
+
+  CopyLen = AsciiStrLen (Source);
+  if (CopyLen > ONBOARDING_ACPI_EC_59_STRING_MAX) {
+    CopyLen = ONBOARDING_ACPI_EC_59_STRING_MAX;
+  }
+
+  CopyMem (Dest, Source, CopyLen);
+  Dest[CopyLen] = '\0';
+  DEBUG ((DEBUG_INFO, "AcpiEcDispatch: %a cached (%u bytes): %a\n", LogLabel, CopyLen, Dest));
 }
 
 VOID
@@ -51,21 +80,16 @@ OnboardingAcpiEcIoDispatchLibSet59D5Serial (
   IN CONST CHAR8  *SerialAscii
   )
 {
-  UINTN  CopyLen;
+  Cache59String (mSerial59D5, SerialAscii, "59/D5 serial");
+}
 
-  if (SerialAscii == NULL) {
-    mSerial59D5[0] = '\0';
-    return;
-  }
-
-  CopyLen = AsciiStrLen (SerialAscii);
-  if (CopyLen > ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX) {
-    CopyLen = ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX;
-  }
-
-  CopyMem (mSerial59D5, SerialAscii, CopyLen);
-  mSerial59D5[CopyLen] = '\0';
-  DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D5 serial cached (%u bytes): %a\n", CopyLen, mSerial59D5));
+VOID
+EFIAPI
+OnboardingAcpiEcIoDispatchLibSet59D6Manufacturer (
+  IN CONST CHAR8  *ManufacturerAscii
+  )
+{
+  Cache59String (mManufacturer59D6, ManufacturerAscii, "59/D6 manufacturer");
 }
 
 EFI_STATUS
@@ -171,7 +195,8 @@ ProcessCmdPortWrite (
   ResetParamBuffer ();
   mPendingCmd    = Value;
   mPendingSubCmd = 0;
-  mSerial59D5ReadIndex = 0;
+  mSerial59D5ReadIndex       = 0;
+  mManufacturer59D6ReadIndex = 0;
 
   if (Value == ONBOARDING_ACPI_EC_CMD_VENDOR_59) {
     mState = AcpiEcDispatchStateWaitSubCmd;
@@ -205,6 +230,13 @@ ProcessDataPortWrite (
         mState               = AcpiEcDispatchStateReadResponse;
         mSerial59D5ReadIndex = 0;
         DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD5, serial read ready on 0x62\n"));
+        return EFI_SUCCESS;
+      }
+
+      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D6) {
+        mState                     = AcpiEcDispatchStateReadResponse;
+        mManufacturer59D6ReadIndex = 0;
+        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD6, manufacturer read ready on 0x62\n"));
         return EFI_SUCCESS;
       }
 
@@ -252,21 +284,35 @@ ProcessDataPortRead (
     return EFI_NOT_READY;
   }
 
-  if (mPendingSubCmd != ONBOARDING_ACPI_EC_SUBCMD_59_D5) {
-    return EFI_UNSUPPORTED;
-  }
+  if (mPendingSubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D5) {
+    Byte = mSerial59D5[mSerial59D5ReadIndex];
+    *Value = (UINT8)Byte;
 
-  Byte = mSerial59D5[mSerial59D5ReadIndex];
-  *Value = (UINT8)Byte;
+    if (Byte == '\0') {
+      mState = AcpiEcDispatchStateIdle;
+      DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D5 serial read complete\n"));
+      return EFI_SUCCESS;
+    }
 
-  if (Byte == '\0') {
-    mState = AcpiEcDispatchStateIdle;
-    DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D5 serial read complete\n"));
+    mSerial59D5ReadIndex++;
     return EFI_SUCCESS;
   }
 
-  mSerial59D5ReadIndex++;
-  return EFI_SUCCESS;
+  if (mPendingSubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D6) {
+    Byte = mManufacturer59D6[mManufacturer59D6ReadIndex];
+    *Value = (UINT8)Byte;
+
+    if (Byte == '\0') {
+      mState = AcpiEcDispatchStateIdle;
+      DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D6 manufacturer read complete\n"));
+      return EFI_SUCCESS;
+    }
+
+    mManufacturer59D6ReadIndex++;
+    return EFI_SUCCESS;
+  }
+
+  return EFI_UNSUPPORTED;
 }
 
 EFI_STATUS

@@ -11,6 +11,11 @@
     2. Host writes 0xD5 to port 0x62 (sub-command)
     3. Host reads ASCII serial bytes from port 0x62 until 0x00
 
+  Command flow (cmd 0x59, sub-command 0xD6 — SMBIOS Type 1 manufacturer):
+    1. Host writes 0x59 to port 0x66
+    2. Host writes 0xD6 to port 0x62 (sub-command)
+    3. Host reads ASCII manufacturer bytes from port 0x62 until 0x00
+
   Platform EC access code or SMM I/O trap should call ProcessWrite() / ProcessRead()
   for traffic on these ports.
 
@@ -25,8 +30,10 @@
 #define ONBOARDING_ACPI_EC_CMD_VENDOR_59   0x59
 #define ONBOARDING_ACPI_EC_SUBCMD_59_D0    0xD0
 #define ONBOARDING_ACPI_EC_SUBCMD_59_D5    0xD5
+#define ONBOARDING_ACPI_EC_SUBCMD_59_D6    0xD6
 
-#define ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX  64
+#define ONBOARDING_ACPI_EC_59_STRING_MAX   64
+#define ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX  ONBOARDING_ACPI_EC_59_STRING_MAX
 
 /**
   Handler for command 0x59 / sub-command 0xD0.

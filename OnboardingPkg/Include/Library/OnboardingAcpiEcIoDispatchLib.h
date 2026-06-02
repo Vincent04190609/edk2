@@ -30,6 +30,17 @@ OnboardingAcpiEcIoDispatchLibSet59D5Serial (
   );
 
 /**
+  Cache SMBIOS Type 1 manufacturer for cmd 0x59 / sub-command 0xD6 read-back.
+
+  @param[in]  ManufacturerAscii  NUL-terminated ASCII manufacturer (truncated if too long).
+**/
+VOID
+EFIAPI
+OnboardingAcpiEcIoDispatchLibSet59D6Manufacturer (
+  IN CONST CHAR8  *ManufacturerAscii
+  );
+
+/**
   Register handler for command 0x59 / sub-command 0xD0.
 **/
 EFI_STATUS
@@ -52,7 +63,7 @@ OnboardingAcpiEcIoDispatchLibProcessWrite (
   );
 
 /**
-  Process read from port 0x62 (sub-command 0xD5 response stream).
+  Process read from port 0x62 (sub-command 0xD5 or 0xD6 response stream).
 
   @param[in]   Port   I/O port (typically 0x62).
   @param[out]  Value  Byte returned to host.

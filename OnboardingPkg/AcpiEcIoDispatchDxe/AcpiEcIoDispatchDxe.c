@@ -53,7 +53,7 @@ GetSmbiosStringByIndex (
 
 STATIC
 EFI_STATUS
-LoadSmbiosType1Serial (
+LoadSmbiosType1Fields (
   VOID
   )
 {
@@ -63,7 +63,9 @@ LoadSmbiosType1Serial (
   EFI_SMBIOS_TYPE           SmbiosType;
   EFI_SMBIOS_TABLE_HEADER   *Record;
   SMBIOS_TABLE_TYPE1        *Type1;
+  CHAR8                     *Strings;
   CHAR8                     *Serial;
+  CHAR8                     *Manufacturer;
 
   Status = gBS->LocateProtocol (
                   &gEfiSmbiosProtocolGuid,
@@ -73,6 +75,7 @@ LoadSmbiosType1Serial (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Smbios protocol not found %r\n", Status));
     OnboardingAcpiEcIoDispatchLibSet59D5Serial ("");
+    OnboardingAcpiEcIoDispatchLibSet59D6Manufacturer ("");
     return Status;
   }
 
@@ -88,21 +91,29 @@ LoadSmbiosType1Serial (
   if (EFI_ERROR (Status) || (Record == NULL)) {
     DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Type 1 SMBIOS record not found %r\n", Status));
     OnboardingAcpiEcIoDispatchLibSet59D5Serial ("");
+    OnboardingAcpiEcIoDispatchLibSet59D6Manufacturer ("");
     return EFI_NOT_FOUND;
   }
 
-  Type1  = (SMBIOS_TABLE_TYPE1 *)Record;
-  Serial = GetSmbiosStringByIndex (
-             (CHAR8 *)Record + Record->Length,
-             Type1->SerialNumber
-             );
+  Type1     = (SMBIOS_TABLE_TYPE1 *)Record;
+  Strings   = (CHAR8 *)Record + Record->Length;
+  Serial    = GetSmbiosStringByIndex (Strings, Type1->SerialNumber);
+  Manufacturer = GetSmbiosStringByIndex (Strings, Type1->Manufacturer);
+
   if ((Serial == NULL) || (Serial[0] == '\0')) {
     DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Type 1 serial string missing\n"));
     OnboardingAcpiEcIoDispatchLibSet59D5Serial ("");
-    return EFI_NOT_FOUND;
+  } else {
+    OnboardingAcpiEcIoDispatchLibSet59D5Serial (Serial);
   }
 
-  OnboardingAcpiEcIoDispatchLibSet59D5Serial (Serial);
+  if ((Manufacturer == NULL) || (Manufacturer[0] == '\0')) {
+    DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Type 1 manufacturer string missing\n"));
+    OnboardingAcpiEcIoDispatchLibSet59D6Manufacturer ("");
+  } else {
+    OnboardingAcpiEcIoDispatchLibSet59D6Manufacturer (Manufacturer);
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -116,7 +127,7 @@ AcpiEcIoDispatchDxeEntryPoint (
   EFI_STATUS  Status;
 
   OnboardingAcpiEcIoDispatchLibInit ();
-  (VOID)LoadSmbiosType1Serial ();
+  (VOID)LoadSmbiosType1Fields ();
 
   Status = gBS->InstallProtocolInterface (
                   &mHandle,
@@ -131,7 +142,7 @@ AcpiEcIoDispatchDxeEntryPoint (
 
   DEBUG ((
     DEBUG_INFO,
-    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0 and 0xD5 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
+    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0, 0xD5, 0xD6 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
     PcdGet16 (PcdAcpiEcDataPort),
     PcdGet16 (PcdAcpiEcCmdStatusPort)
     ));

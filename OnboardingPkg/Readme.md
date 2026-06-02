@@ -24,6 +24,14 @@ Call **`Flush()`** on the protocol when the command packet is complete (unless t
 | 2 | 0x62 | OUT | `0xD5` |
 | 3+ | 0x62 | IN | serial ASCII bytes until `0x00` |
 
+### Sub-command 0xD6 (SMBIOS Type 1 manufacturer read)
+
+| Step | Port | Direction | Value |
+|------|------|-----------|-------|
+| 1 | 0x66 | OUT | `0x59` |
+| 2 | 0x62 | OUT | `0xD6` |
+| 3+ | 0x62 | IN | manufacturer ASCII bytes until `0x00` |
+
 ### Integration
 
 1. Build with `OvmfPkg/OvmfPkgX64.dsc` (includes `AcpiEcIoDispatchDxe`).
@@ -49,7 +57,17 @@ while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
 }
 ```
 
-4. Register a custom handler for 0xD0:
+4. For 0xD6 manufacturer read:
+
+```c
+Dispatch->ProcessWrite (0x66, 0x59);
+Dispatch->ProcessWrite (0x62, 0xD6);
+while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
+  // consume Byte until NUL
+}
+```
+
+5. Register a custom handler for 0xD0:
 
 ```c
 Dispatch->Register59D0Handler (MyHandler59D0);
