@@ -60,7 +60,7 @@ Use the **xlsx** skill to read `{VERSION_LIST}`.
 |--------|--------|---------|
 | 1 | Version No | e.g. `T72` or `00.01` |
 | 2 | Description | Brief summary of changes |
-| 3 | Date | Release date |
+| 3 | Date | Release date and time (`YYYY-MM-DD hh:mm:ss`) |
 
 **Extraction logic**:
 
@@ -99,12 +99,13 @@ Use the **xlsx** skill to append a new row to `{VERSION_LIST}`:
 
 | Version No | Description | Date |
 |------------|-------------|------|
-| Next Version | Brief summary of BIOS changes (from implementation or user) | Today's date (YYYY-MM-DD) |
+| Next Version | Brief summary of BIOS changes (from implementation or user) | Current date and time (`YYYY-MM-DD hh:mm:ss`) |
 
 **Rules**:
 
 - Preserve existing Excel format, fonts, and column layout — match the template exactly
 - Description should capture key changes (feature, bugfix, issue ID if provided)
+- Date must use 24-hour format: `YYYY-MM-DD hh:mm:ss` (e.g. `2026-06-03 14:30:00`)
 - Do **not** skip this step even if the user only asked for a code version bump
 
 ## Step 5 — Verify Excel update
@@ -113,7 +114,7 @@ Re-read `{VERSION_LIST}` and confirm:
 
 - [ ] New row exists as the **latest entry** for that release type
 - [ ] Version No matches **Next Version**
-- [ ] Description and Date are populated
+- [ ] Description and Date are populated (Date in `YYYY-MM-DD hh:mm:ss` format)
 
 If verification fails, fix Excel before continuing.
 
