@@ -136,6 +136,8 @@ gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"..."
 
 Set the string literal to **Next Version** (e.g. `L"T73"` or `L"00.02"`).
 
+Set `PcdFirmwareReleaseDateString` to the **Date** value from the new Excel row (`YYYY-MM-DD hh:mm:ss`). This string is shown on POST and in SMBIOS Type 0 release date.
+
 For other platforms, search the repo for `PcdFirmwareVersionString` in the relevant `.dsc`.
 
 ## Step 7 — Optional follow-ups
