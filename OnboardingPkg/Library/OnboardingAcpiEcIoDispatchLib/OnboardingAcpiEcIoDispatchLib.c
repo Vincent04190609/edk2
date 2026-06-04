@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5, 0xD6, 0xD9 (temperature).
+  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5, 0xD6, 0xD9, 0xDA.
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -30,6 +30,7 @@ STATIC UINTN                        mSerial59D5ReadIndex;
 STATIC CHAR8                        mManufacturer59D6[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
 STATIC UINTN                        mManufacturer59D6ReadIndex;
 STATIC BOOLEAN                      mTemperature59D9Pending;
+STATIC BOOLEAN                      mFanSpeed59DAPending;
 
 VOID
 EFIAPI
@@ -49,6 +50,7 @@ OnboardingAcpiEcIoDispatchLibInit (
   mManufacturer59D6[0]       = '\0';
   mManufacturer59D6ReadIndex = 0;
   mTemperature59D9Pending    = FALSE;
+  mFanSpeed59DAPending       = FALSE;
 }
 
 STATIC
@@ -200,6 +202,7 @@ ProcessCmdPortWrite (
   mSerial59D5ReadIndex       = 0;
   mManufacturer59D6ReadIndex = 0;
   mTemperature59D9Pending    = FALSE;
+  mFanSpeed59DAPending       = FALSE;
 
   if (Value == ONBOARDING_ACPI_EC_CMD_VENDOR_59) {
     mState = AcpiEcDispatchStateWaitSubCmd;
@@ -247,6 +250,13 @@ ProcessDataPortWrite (
         mState                  = AcpiEcDispatchStateReadResponse;
         mTemperature59D9Pending = TRUE;
         DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD9, temperature read ready on 0x62\n"));
+        return EFI_SUCCESS;
+      }
+
+      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_DA) {
+        mState               = AcpiEcDispatchStateReadResponse;
+        mFanSpeed59DAPending = TRUE;
+        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xDA, fan speed read ready on 0x62\n"));
         return EFI_SUCCESS;
       }
 
@@ -334,6 +344,22 @@ ProcessDataPortRead (
       DEBUG_INFO,
       "AcpiEcDispatch: 59/D9 temperature read complete (0x%02x)\n",
       ONBOARDING_ACPI_EC_59_D9_TEMPERATURE_C
+      ));
+    return EFI_SUCCESS;
+  }
+
+  if (mPendingSubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_DA) {
+    if (!mFanSpeed59DAPending) {
+      return EFI_NOT_READY;
+    }
+
+    *Value               = ONBOARDING_ACPI_EC_59_DA_FAN_SPEED_FULL;
+    mFanSpeed59DAPending = FALSE;
+    mState               = AcpiEcDispatchStateIdle;
+    DEBUG ((
+      DEBUG_INFO,
+      "AcpiEcDispatch: 59/DA fan speed read complete (0x%02x)\n",
+      ONBOARDING_ACPI_EC_59_DA_FAN_SPEED_FULL
       ));
     return EFI_SUCCESS;
   }

@@ -40,6 +40,14 @@ Call **`Flush()`** on the protocol when the command packet is complete (unless t
 | 2 | 0x62 | OUT | `0xD9` |
 | 3 | 0x62 | IN | `0x32` (50 °C) |
 
+### Sub-command 0xDA (fan speed read)
+
+| Step | Port | Direction | Value |
+|------|------|-----------|-------|
+| 1 | 0x66 | OUT | `0x59` |
+| 2 | 0x62 | OUT | `0xDA` |
+| 3 | 0x62 | IN | `0xF0` (full speed) |
+
 ### Integration
 
 1. Build with `OvmfPkg/OvmfPkgX64.dsc` (includes `AcpiEcIoDispatchDxe`).
@@ -83,7 +91,15 @@ Dispatch->ProcessWrite (0x62, 0xD9);
 Dispatch->ProcessRead (0x62, &Byte);  // Byte == 0x32 (50 C)
 ```
 
-6. Register a custom handler for 0xD0:
+6. For 0xDA fan speed read:
+
+```c
+Dispatch->ProcessWrite (0x66, 0x59);
+Dispatch->ProcessWrite (0x62, 0xDA);
+Dispatch->ProcessRead (0x62, &Byte);  // Byte == 0xF0 (full speed)
+```
+
+7. Register a custom handler for 0xD0:
 
 ```c
 Dispatch->Register59D0Handler (MyHandler59D0);

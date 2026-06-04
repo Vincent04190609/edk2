@@ -509,10 +509,10 @@
 !endif
 
 [PcdsFixedAtBuild]
-  # SMBIOS Manufacturer and BIOS Version for JIRA-519-1
+  # SMBIOS Manufacturer and BIOS Version for JIRA-519-2
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vibe-Factory"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T80"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-04 11:38:21"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T81"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-04 14:56:51"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
