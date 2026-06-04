@@ -32,6 +32,14 @@ Call **`Flush()`** on the protocol when the command packet is complete (unless t
 | 2 | 0x62 | OUT | `0xD6` |
 | 3+ | 0x62 | IN | manufacturer ASCII bytes until `0x00` |
 
+### Sub-command 0xD9 (temperature read)
+
+| Step | Port | Direction | Value |
+|------|------|-----------|-------|
+| 1 | 0x66 | OUT | `0x59` |
+| 2 | 0x62 | OUT | `0xD9` |
+| 3 | 0x62 | IN | `0x32` (50 °C) |
+
 ### Integration
 
 1. Build with `OvmfPkg/OvmfPkgX64.dsc` (includes `AcpiEcIoDispatchDxe`).
@@ -67,7 +75,15 @@ while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
 }
 ```
 
-5. Register a custom handler for 0xD0:
+5. For 0xD9 temperature read:
+
+```c
+Dispatch->ProcessWrite (0x66, 0x59);
+Dispatch->ProcessWrite (0x62, 0xD9);
+Dispatch->ProcessRead (0x62, &Byte);  // Byte == 0x32 (50 C)
+```
+
+6. Register a custom handler for 0xD0:
 
 ```c
 Dispatch->Register59D0Handler (MyHandler59D0);

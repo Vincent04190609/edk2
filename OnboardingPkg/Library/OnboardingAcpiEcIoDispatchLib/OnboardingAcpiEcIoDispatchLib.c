@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5 (serial), 0xD6 (manufacturer).
+  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5, 0xD6, 0xD9 (temperature).
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -29,6 +29,7 @@ STATIC CHAR8                        mSerial59D5[ONBOARDING_ACPI_EC_59_STRING_MAX
 STATIC UINTN                        mSerial59D5ReadIndex;
 STATIC CHAR8                        mManufacturer59D6[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
 STATIC UINTN                        mManufacturer59D6ReadIndex;
+STATIC BOOLEAN                      mTemperature59D9Pending;
 
 VOID
 EFIAPI
@@ -47,6 +48,7 @@ OnboardingAcpiEcIoDispatchLibInit (
   mSerial59D5ReadIndex       = 0;
   mManufacturer59D6[0]       = '\0';
   mManufacturer59D6ReadIndex = 0;
+  mTemperature59D9Pending    = FALSE;
 }
 
 STATIC
@@ -197,6 +199,7 @@ ProcessCmdPortWrite (
   mPendingSubCmd = 0;
   mSerial59D5ReadIndex       = 0;
   mManufacturer59D6ReadIndex = 0;
+  mTemperature59D9Pending    = FALSE;
 
   if (Value == ONBOARDING_ACPI_EC_CMD_VENDOR_59) {
     mState = AcpiEcDispatchStateWaitSubCmd;
@@ -237,6 +240,13 @@ ProcessDataPortWrite (
         mState                     = AcpiEcDispatchStateReadResponse;
         mManufacturer59D6ReadIndex = 0;
         DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD6, manufacturer read ready on 0x62\n"));
+        return EFI_SUCCESS;
+      }
+
+      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D9) {
+        mState                  = AcpiEcDispatchStateReadResponse;
+        mTemperature59D9Pending = TRUE;
+        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD9, temperature read ready on 0x62\n"));
         return EFI_SUCCESS;
       }
 
@@ -309,6 +319,22 @@ ProcessDataPortRead (
     }
 
     mManufacturer59D6ReadIndex++;
+    return EFI_SUCCESS;
+  }
+
+  if (mPendingSubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D9) {
+    if (!mTemperature59D9Pending) {
+      return EFI_NOT_READY;
+    }
+
+    *Value                  = ONBOARDING_ACPI_EC_59_D9_TEMPERATURE_C;
+    mTemperature59D9Pending = FALSE;
+    mState                  = AcpiEcDispatchStateIdle;
+    DEBUG ((
+      DEBUG_INFO,
+      "AcpiEcDispatch: 59/D9 temperature read complete (0x%02x)\n",
+      ONBOARDING_ACPI_EC_59_D9_TEMPERATURE_C
+      ));
     return EFI_SUCCESS;
   }
 
