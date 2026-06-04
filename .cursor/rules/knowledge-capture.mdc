@@ -11,6 +11,8 @@ A feature implementation or bugfix task is **NOT complete** until the Primary Kn
 
 **Write-back target**: `PROJECT_KB_ROOT` (see **`project-knowledge.mdc`** for `PROJECT_NAME` and paths). Do not write project playbooks/runbooks into `COMMON_KB_ROOT` unless explicitly updating shared standards.
 
+> **⚠ WSL write access**: The KB lives outside the workspace at a `/mnt/<drive>/...` path (translate `d:\...` → `/mnt/d/...`). Sandboxed file tools **cannot** write there — use **elevated permissions** and then **read the file back to confirm** it landed. See the "Runtime path resolution" section in `project-knowledge.mdc`. Never mark write-back done without verifying the file on disk.
+
 ## When This Rule Applies
 
 Apply after completing (or substantially progressing) any of:

@@ -7,6 +7,14 @@ alwaysApply: true
 
 **SINGLE SOURCE OF TRUTH** for knowledge-base paths. Other rules (`lookup-order`, `knowledge-capture`) and skills MUST use the variables below — do **not** hardcode project folder names like `Onboarding` in agent workflows.
 
+## ⚠️ Runtime path resolution (WSL / Linux) — READ BEFORE ANY KB WRITE-BACK
+
+The KB variables below use **Windows drive paths** (`d:\...`), but agents in this workspace run under **WSL/Linux**. This mismatch is the #1 reason knowledge-base write-backs silently fail. Before reading or writing the KB:
+
+1. **Translate the path**: `d:\VibeCoding\...` → `/mnt/d/VibeCoding/...` (drive letter → `/mnt/<letter>`, backslashes → forward slashes). A literal `d:\...` path does **not** exist on Linux and any write to it fails or lands in the wrong place.
+2. **The KB is OUTSIDE the agent workspace** (`PROJECT_KB_ROOT` is under `/mnt/d`, not under the edk2 repo). The default tool sandbox only permits writes **inside the workspace**, so `Write`/`StrReplace`/sandboxed shell writes to the KB return **`Permission denied`**. You MUST perform KB writes with **elevated permissions** (run the write command with `all` permissions / outside the sandbox).
+3. **Verify the write landed**: after creating/updating a KB file, `ls`/read it back at the `/mnt/d` path. Do not report the KB as "updated" until the file is confirmed on disk. (A blocked write that is not verified is exactly how previous sessions "fixed" this and failed again.)
+
 ## Variables to edit when switching projects
 
 Edit **only these two** in this file (and mirror `PROJECT_NAME` / `PROJECT_KB_ROOT` in `PROJECT_KB_ROOT/PROJECT.md`):

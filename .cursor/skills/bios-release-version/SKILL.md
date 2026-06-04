@@ -23,6 +23,8 @@ Procedural gate for Test and Formal BIOS releases. **Excel is the source of trut
 
 **Related skills**: Use the **xlsx** skill (`.cursor/skills/xlsx/SKILL.md`) for all Excel read/write operations.
 
+> **⚠ WSL / out-of-workspace write**: `VERSION_LIST` (the Excel) lives under `PROJECT_KB_ROOT`, which is **outside the agent workspace** at a `/mnt/<drive>/...` path (translate `d:\...` → `/mnt/d/...`). The default sandbox blocks writes there, so a sandboxed `wb.save()` / file write returns **`Permission denied`** and the row never lands. Run the Excel **write with elevated permissions** (outside the sandbox), then **re-read the file to verify** (Step 5 is mandatory, not optional). See "Runtime path resolution" in `project-knowledge.mdc`.
+
 ## When to Use
 
 Run this skill when:
@@ -110,13 +112,13 @@ Use the **xlsx** skill to append a new row to `{VERSION_LIST}`:
 
 ## Step 5 — Verify Excel update
 
-Re-read `{VERSION_LIST}` and confirm:
+Re-read `{VERSION_LIST}` **from disk** (do not trust the write call's return) and confirm:
 
 - [ ] New row exists as the **latest entry** for that release type
 - [ ] Version No matches **Next Version**
 - [ ] Description and Date are populated (Date in `YYYY-MM-DD hh:mm:ss` format)
 
-If verification fails, fix Excel before continuing.
+If the re-read does not show the new row, the write was **blocked by the sandbox** (KB is outside the workspace). Redo the write with **elevated permissions** and re-verify. Never proceed to Step 6 until the row is confirmed on disk.
 
 ## Step 6 — Update firmware version in code
 
