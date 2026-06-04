@@ -1810,6 +1810,35 @@ PlatformBootManagerAfterConsole (
   BootLogoEnableLogo ();
 
   //
+  // Show BIOS version and release time on POST.
+  //
+  {
+    UINTN  FirmwareVerLength;
+    UINTN  ReleaseTimeLength;
+
+    FirmwareVerLength  = StrLen (PcdGetPtr (PcdFirmwareVersionString));
+    ReleaseTimeLength  = StrLen (PcdGetPtr (PcdFirmwareReleaseDateString));
+
+    if ((FirmwareVerLength > 0) && (ReleaseTimeLength > 0)) {
+      Print (
+        L"BIOS Version: %s  Build: %s\n",
+        PcdGetPtr (PcdFirmwareVersionString),
+        PcdGetPtr (PcdFirmwareReleaseDateString)
+        );
+    } else if (FirmwareVerLength > 0) {
+      Print (
+        L"BIOS Version: %s\n",
+        PcdGetPtr (PcdFirmwareVersionString)
+        );
+    } else if (ReleaseTimeLength > 0) {
+      Print (
+        L"Build: %s\n",
+        PcdGetPtr (PcdFirmwareReleaseDateString)
+        );
+    }
+  }
+
+  //
   // Set PCI Interrupt Line registers and ACPI SCI_EN
   //
   PciAcpiInitialization ();

@@ -153,7 +153,7 @@ AcpiEcIoDispatchDxeEntryPoint (
 
   DEBUG ((
     DEBUG_INFO,
-    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0, 0xD4, 0xD5, 0xD6 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
+    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0, 0xD4, 0xD5, 0xD6, 0xD9, 0xDA dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
     PcdGet16 (PcdAcpiEcDataPort),
     PcdGet16 (PcdAcpiEcCmdStatusPort)
     ));

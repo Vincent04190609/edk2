@@ -19,6 +19,8 @@ Captures reusable FW engineering knowledge into the Primary Knowledge Repository
 
 **Read discipline**: Follow `lookup-order` before implementing — check for existing playbooks/runbooks first.
 
+> **⚠ WSL / out-of-workspace write**: `PROJECT_KB_ROOT` is **outside the agent workspace** at a `/mnt/<drive>/...` path (translate `d:\...` → `/mnt/d/...`). The default sandbox blocks writes there, so `Write`/`StrReplace`/sandboxed shell writes return **`Permission denied`** and the file silently never lands. Perform KB writes with **elevated permissions**, then **read the file back from disk to confirm** before reporting success. See "Runtime path resolution" in `project-knowledge.mdc`.
+
 ## Quick Decision
 
 | User task | Document type | Target folder |
@@ -59,6 +61,8 @@ If the work produced a new **test** (Txx) or **formal** (xx.xx) BIOS version:
 Do **not** guess the next version or skip Excel — delegate entirely to **bios-release-version**.
 
 ### Step 5 — Hand off to user
+
+**Before replying**, `ls`/read each created or updated KB file back from its `/mnt/<drive>/...` path to confirm it landed on disk. If a write was blocked, redo it with elevated permissions. Do not list a file as "Created/Updated" unless verified.
 
 Reply with:
 

@@ -509,9 +509,10 @@
 !endif
 
 [PcdsFixedAtBuild]
-  # SMBIOS Manufacturer and BIOS Version for T76
+  # SMBIOS Manufacturer and BIOS Version for JIRA-519-2
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vibe-Factory"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T79"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T81"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-04 14:56:51"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE

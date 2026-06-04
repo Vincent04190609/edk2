@@ -15,6 +15,8 @@ Read variables from **`project-knowledge.mdc`**: `PROJECT_NAME`, `PROJECT_KB_ROO
 
 Compute **`PROJECT_KB_README`** = `{PROJECT_KB_ROOT}\README.md` (do not use a stale path from another project).
 
+**Runtime path (WSL/Linux)**: these variables use Windows `d:\...` paths. When running under WSL/Linux, translate `d:\...` → `/mnt/d/...` before reading (a literal `d:\...` path does not resolve on Linux). For write-back, the KB is outside the workspace and needs elevated permissions — see "Runtime path resolution" in `project-knowledge.mdc`.
+
 ## Step 1 — Read the project knowledge base FIRST
 
 **ALWAYS start here**: `PROJECT_KB_README` (README under `PROJECT_KB_ROOT` for the current `PROJECT_NAME`).

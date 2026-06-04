@@ -74,7 +74,8 @@ OnboardingAcpiEcIoDispatchLibProcessWrite (
   );
 
 /**
-  Process read from port 0x62 (sub-command 0xD4, 0xD5, or 0xD6 response stream).
+  Process read from port 0x62 (sub-command 0xD4, 0xD5, 0xD6, 0xD9, or 0xDA response;
+  unsupported 0xDx returns 0x0000).
 
   @param[in]   Port   I/O port (typically 0x62).
   @param[out]  Value  Byte returned to host.
