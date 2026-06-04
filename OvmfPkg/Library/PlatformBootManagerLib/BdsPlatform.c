@@ -1839,6 +1839,11 @@ PlatformBootManagerAfterConsole (
   }
 
   //
+  // Show thermal temperature on POST (matches ACPI EC 0x59/0xD9 value 0x32).
+  //
+  Print (L"Thermal Temperature = 0x%02x\n", 0x32);
+
+  //
   // Set PCI Interrupt Line registers and ACPI SCI_EN
   //
   PciAcpiInitialization ();
