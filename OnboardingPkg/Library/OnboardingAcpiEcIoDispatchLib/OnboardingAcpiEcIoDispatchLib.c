@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5 (serial), 0xD6 (manufacturer).
+  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5, 0xD6; unsupported 0xDx returns 0x0000.
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -16,6 +16,7 @@ typedef enum {
   AcpiEcDispatchStateWaitSubCmd,
   AcpiEcDispatchStateCollectParams,
   AcpiEcDispatchStateReadResponse,
+  AcpiEcDispatchStateUnsupported,
 } ACPI_EC_DISPATCH_STATE;
 
 STATIC ACPI_EC_DISPATCH_STATE       mState = AcpiEcDispatchStateIdle;
@@ -29,6 +30,18 @@ STATIC CHAR8                        mSerial59D5[ONBOARDING_ACPI_EC_59_STRING_MAX
 STATIC UINTN                        mSerial59D5ReadIndex;
 STATIC CHAR8                        mManufacturer59D6[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
 STATIC UINTN                        mManufacturer59D6ReadIndex;
+STATIC UINTN                        mUnsupportedReadIndex;
+
+STATIC
+BOOLEAN
+IsSupported59SubCmd (
+  IN UINT8  SubCmd
+  )
+{
+  return (SubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D0) ||
+         (SubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D5) ||
+         (SubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D6);
+}
 
 VOID
 EFIAPI
@@ -47,6 +60,7 @@ OnboardingAcpiEcIoDispatchLibInit (
   mSerial59D5ReadIndex       = 0;
   mManufacturer59D6[0]       = '\0';
   mManufacturer59D6ReadIndex = 0;
+  mUnsupportedReadIndex      = 0;
 }
 
 STATIC
@@ -197,6 +211,7 @@ ProcessCmdPortWrite (
   mPendingSubCmd = 0;
   mSerial59D5ReadIndex       = 0;
   mManufacturer59D6ReadIndex = 0;
+  mUnsupportedReadIndex      = 0;
 
   if (Value == ONBOARDING_ACPI_EC_CMD_VENDOR_59) {
     mState = AcpiEcDispatchStateWaitSubCmd;
@@ -220,29 +235,34 @@ ProcessDataPortWrite (
   switch (mState) {
     case AcpiEcDispatchStateWaitSubCmd:
       mPendingSubCmd = Value;
-      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D0) {
-        mState = AcpiEcDispatchStateCollectParams;
-        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD0, collecting params on 0x62\n"));
-        return EFI_SUCCESS;
-      }
+      if (IsSupported59SubCmd (Value)) {
+        if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D0) {
+          mState = AcpiEcDispatchStateCollectParams;
+          DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD0, collecting params on 0x62\n"));
+          return EFI_SUCCESS;
+        }
 
-      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D5) {
-        mState               = AcpiEcDispatchStateReadResponse;
-        mSerial59D5ReadIndex = 0;
-        DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD5, serial read ready on 0x62\n"));
-        return EFI_SUCCESS;
-      }
+        if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D5) {
+          mState               = AcpiEcDispatchStateReadResponse;
+          mSerial59D5ReadIndex = 0;
+          DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD5, serial read ready on 0x62\n"));
+          return EFI_SUCCESS;
+        }
 
-      if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D6) {
         mState                     = AcpiEcDispatchStateReadResponse;
         mManufacturer59D6ReadIndex = 0;
         DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD6, manufacturer read ready on 0x62\n"));
         return EFI_SUCCESS;
       }
 
-      DEBUG ((DEBUG_WARN, "AcpiEcDispatch: cmd 0x59 unknown sub-command 0x%02x\n", Value));
-      mState = AcpiEcDispatchStateIdle;
-      return EFI_UNSUPPORTED;
+      mState                = AcpiEcDispatchStateUnsupported;
+      mUnsupportedReadIndex = 0;
+      DEBUG ((
+        DEBUG_WARN,
+        "AcpiEcDispatch: cmd 0x59 unsupported sub-command 0x%02x, read returns 0x0000\n",
+        Value
+        ));
+      return EFI_SUCCESS;
 
     case AcpiEcDispatchStateCollectParams:
       Status = EnsureParamCapacity ();
@@ -279,6 +299,17 @@ ProcessDataPortRead (
   )
 {
   CHAR8  Byte;
+
+  if (mState == AcpiEcDispatchStateUnsupported) {
+    *Value = ONBOARDING_ACPI_EC_UNSUPPORTED_RESPONSE;
+    mUnsupportedReadIndex++;
+    if (mUnsupportedReadIndex >= ONBOARDING_ACPI_EC_UNSUPPORTED_RESPONSE_BYTES) {
+      mState = AcpiEcDispatchStateIdle;
+      DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/unsupported read complete (0x0000)\n"));
+    }
+
+    return EFI_SUCCESS;
+  }
 
   if (mState != AcpiEcDispatchStateReadResponse) {
     return EFI_NOT_READY;

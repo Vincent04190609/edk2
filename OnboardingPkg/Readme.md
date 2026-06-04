@@ -24,6 +24,14 @@ Call **`Flush()`** on the protocol when the command packet is complete (unless t
 | 2 | 0x62 | OUT | `0xD5` |
 | 3+ | 0x62 | IN | serial ASCII bytes until `0x00` |
 
+### Unsupported sub-command 0xDx (e.g. 0xD8)
+
+| Step | Port | Direction | Value |
+|------|------|-----------|-------|
+| 1 | 0x66 | OUT | `0x59` |
+| 2 | 0x62 | OUT | unsupported `0xDx` (not `0xD0`, `0xD5`, `0xD6`) |
+| 3–4 | 0x62 | IN | `0x00`, `0x00` (16-bit unsupported response `0x0000`) |
+
 ### Sub-command 0xD6 (SMBIOS Type 1 manufacturer read)
 
 | Step | Port | Direction | Value |
@@ -57,7 +65,20 @@ while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
 }
 ```
 
-4. For 0xD6 manufacturer read:
+4. For unsupported 0xDx (example `0xD8`):
+
+```c
+UINT8  Byte;
+UINTN  Index;
+
+Dispatch->ProcessWrite (0x66, 0x59);
+Dispatch->ProcessWrite (0x62, 0xD8);
+for (Index = 0; Index < 2; Index++) {
+  Dispatch->ProcessRead (0x62, &Byte);  // expect 0x00 each
+}
+```
+
+5. For 0xD6 manufacturer read:
 
 ```c
 Dispatch->ProcessWrite (0x66, 0x59);
@@ -67,7 +88,7 @@ while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
 }
 ```
 
-5. Register a custom handler for 0xD0:
+6. Register a custom handler for 0xD0:
 
 ```c
 Dispatch->Register59D0Handler (MyHandler59D0);

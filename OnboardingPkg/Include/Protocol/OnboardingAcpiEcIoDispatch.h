@@ -16,6 +16,11 @@
     2. Host writes 0xD6 to port 0x62 (sub-command)
     3. Host reads ASCII manufacturer bytes from port 0x62 until 0x00
 
+  Unsupported cmd 0x59 / sub-command 0xDx (e.g. 0xD8):
+    1. Host writes 0x59 to port 0x66
+    2. Host writes unsupported 0xDx to port 0x62
+    3. Host reads port 0x62 — returns 0x0000 (two bytes 0x00) then idle
+
   Platform EC access code or SMM I/O trap should call ProcessWrite() / ProcessRead()
   for traffic on these ports.
 
@@ -34,6 +39,10 @@
 
 #define ONBOARDING_ACPI_EC_59_STRING_MAX   64
 #define ONBOARDING_ACPI_EC_59_D5_SERIAL_MAX  ONBOARDING_ACPI_EC_59_STRING_MAX
+
+/** Unsupported 0x59/0xDx response byte (16-bit value 0x0000 = two reads). */
+#define ONBOARDING_ACPI_EC_UNSUPPORTED_RESPONSE       0x00
+#define ONBOARDING_ACPI_EC_UNSUPPORTED_RESPONSE_BYTES 2
 
 /**
   Handler for command 0x59 / sub-command 0xD0.
