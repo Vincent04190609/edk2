@@ -21,6 +21,14 @@ Procedural gate for Test and Formal BIOS releases. **Excel is the source of trut
 | `VERSION_LIST` | `{PROJECT_KB_ROOT}/development-guides/VersionList.xlsx` |
 | `VERSION_FALLBACK` | `{PROJECT_KB_ROOT}/development-guides/config/version_tracking.json` |
 
+**WSL path resolution (MANDATORY)**: `PROJECT_KB_ROOT` is stored as a Windows path (e.g. `d:\VibeCoding\Projects\Onboarding`). When running in WSL/Linux, convert to POSIX before any file operation:
+
+```
+d:\VibeCoding\Projects\Onboarding  →  /mnt/d/VibeCoding/Projects/Onboarding
+```
+
+Always use the `/mnt/d/...` form when calling Python (pandas/openpyxl) or shell tools from WSL. Never pass `d:\...` to a Linux process.
+
 **Related skills**: Use the **xlsx** skill (`.cursor/skills/xlsx/SKILL.md`) for all Excel read/write operations.
 
 ## When to Use
@@ -40,6 +48,10 @@ Read Excel → Increment → Write Excel → Verify Excel → Update .dsc → Re
 ```
 
 **STOP** if Excel read or write fails. Do not update code or build until Excel is updated and verified.
+
+> ⛔ **Hard stop rule**: If the xlsx skill cannot open, read, or write `{VERSION_LIST}`, reply to the user immediately:
+> `"⛔ Excel update FAILED — path: {VERSION_LIST} (WSL: /mnt/d/...). NOT proceeding to .dsc update. Fix the path or file and retry."`
+> Do NOT continue to Step 3 or beyond until Excel is confirmed readable and writable.
 
 ## Step 1 — Read rules and classify release type
 
@@ -73,7 +85,9 @@ Use the **xlsx** skill to read `{VERSION_LIST}`.
 
 1. Read `{VERSION_FALLBACK}`
 2. Use `last_test_version` or `last_formal_version` as Last Version
-3. Tell the user Excel was unavailable and fallback was used
+3. **MANDATORY**: Notify the user immediately:
+   `"⚠ Excel NOT updated — path unreachable or unreadable. Used fallback JSON ({VERSION_FALLBACK}). Excel MUST be updated manually before this release is considered recorded."`
+4. Continue only if user explicitly acknowledges the warning and accepts fallback
 
 ## Step 3 — Calculate next version
 
@@ -116,7 +130,9 @@ Re-read `{VERSION_LIST}` and confirm:
 - [ ] Version No matches **Next Version**
 - [ ] Description and Date are populated (Date in `YYYY-MM-DD hh:mm:ss` format)
 
-If verification fails, fix Excel before continuing.
+If verification fails:
+> ⛔ Reply: `"⛔ Excel verification FAILED — new row not found or data mismatch in {VERSION_LIST}. NOT proceeding to Step 6. Fix Excel and re-verify."`
+> Do NOT update `.dsc` until verification passes.
 
 ## Step 6 — Update firmware version in code
 

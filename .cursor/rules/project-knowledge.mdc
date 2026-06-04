@@ -42,9 +42,20 @@ Example: if `PROJECT_KB_ROOT` = `d:\VibeCoding\Projects\ProductX`, then `PROJECT
 | **Common** | `COMMON_KB_ROOT` | UEFI / SMBIOS / ACPI specs, `Coding-Rule/`, `Commit-Rule/`, industry standards |
 | **Project** | `PROJECT_KB_ROOT` | `development-guides/`, `playbooks/`, `runbooks/`, `DockerImage/`, `VersionList.xlsx`, project architecture |
 
+## WSL Path Resolution (MANDATORY for agents running in WSL/Linux)
+
+`PROJECT_KB_ROOT` and `COMMON_KB_ROOT` are stored as Windows paths. Agents running in WSL **MUST** convert to POSIX before any file I/O or Python operation:
+
+| Windows path | WSL/Linux equivalent |
+|---|---|
+| `d:\VibeCoding\Projects\Onboarding` | `/mnt/d/VibeCoding/Projects/Onboarding` |
+| `d:\VibeCoding\Common` | `/mnt/d/VibeCoding/Common` |
+
+**Rule**: Replace `d:\` → `/mnt/d/`, then replace all `\` → `/`. Never pass a `d:\...` path to a Linux process (Python, shell, openpyxl, etc.).
+
 ## How Agents Resolve Paths
 
-1. **Project workflows** → compute `PROJECT_KB_README`, read it, then use paths under `PROJECT_KB_ROOT`.
+1. **Project workflows** → compute `PROJECT_KB_README`, read it, then use paths under `PROJECT_KB_ROOT` (converted to WSL form if on Linux).
 2. **Standards** → `COMMON_KB_ROOT` or `COMMON_FROM_PROJECT` from project docs.
 3. **Write-back** → only under `PROJECT_KB_ROOT` unless updating Common standards.
 4. **Markdown in project KB** → relative paths (`./development-guides/...`, `../../Common/...`).

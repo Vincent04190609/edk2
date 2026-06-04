@@ -95,10 +95,21 @@ LoadSmbiosType1Fields (
     return EFI_NOT_FOUND;
   }
 
-  Type1     = (SMBIOS_TABLE_TYPE1 *)Record;
-  Strings   = (CHAR8 *)Record + Record->Length;
-  Serial    = GetSmbiosStringByIndex (Strings, Type1->SerialNumber);
+  Type1        = (SMBIOS_TABLE_TYPE1 *)Record;
+  Strings      = (CHAR8 *)Record + Record->Length;
+  Serial       = GetSmbiosStringByIndex (Strings, Type1->SerialNumber);
   Manufacturer = GetSmbiosStringByIndex (Strings, Type1->Manufacturer);
+
+  {
+    CHAR8  *ProductName;
+    ProductName = GetSmbiosStringByIndex (Strings, Type1->ProductName);
+    if ((ProductName == NULL) || (ProductName[0] == '\0')) {
+      DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Type 1 product name string missing\n"));
+      OnboardingAcpiEcIoDispatchLibSet59D4ProductName ("");
+    } else {
+      OnboardingAcpiEcIoDispatchLibSet59D4ProductName (ProductName);
+    }
+  }
 
   if ((Serial == NULL) || (Serial[0] == '\0')) {
     DEBUG ((DEBUG_WARN, "AcpiEcIoDispatchDxe: Type 1 serial string missing\n"));
@@ -142,7 +153,7 @@ AcpiEcIoDispatchDxeEntryPoint (
 
   DEBUG ((
     DEBUG_INFO,
-    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0, 0xD5, 0xD6 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
+    "AcpiEcIoDispatchDxe: cmd 0x59 / sub 0xD0, 0xD4, 0xD5, 0xD6 dispatch ready (ports 0x%02x data, 0x%02x cmd)\n",
     PcdGet16 (PcdAcpiEcDataPort),
     PcdGet16 (PcdAcpiEcCmdStatusPort)
     ));

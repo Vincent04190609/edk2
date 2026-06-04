@@ -19,6 +19,17 @@ OnboardingAcpiEcIoDispatchLibInit (
   );
 
 /**
+  Cache SMBIOS Type 1 product name for cmd 0x59 / sub-command 0xD4 read-back.
+
+  @param[in]  ProductNameAscii  NUL-terminated ASCII product name (truncated if too long).
+**/
+VOID
+EFIAPI
+OnboardingAcpiEcIoDispatchLibSet59D4ProductName (
+  IN CONST CHAR8  *ProductNameAscii
+  );
+
+/**
   Cache SMBIOS Type 1 serial for cmd 0x59 / sub-command 0xD5 read-back.
 
   @param[in]  SerialAscii  NUL-terminated ASCII serial (truncated if too long).
@@ -63,7 +74,7 @@ OnboardingAcpiEcIoDispatchLibProcessWrite (
   );
 
 /**
-  Process read from port 0x62 (sub-command 0xD5 or 0xD6 response stream).
+  Process read from port 0x62 (sub-command 0xD4, 0xD5, or 0xD6 response stream).
 
   @param[in]   Port   I/O port (typically 0x62).
   @param[out]  Value  Byte returned to host.

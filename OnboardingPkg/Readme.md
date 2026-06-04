@@ -6,6 +6,14 @@ OEM platform features for the Onboarding BIOS project.
 
 Dispatches vendor command **0x59** on port **0x66** with sub-commands on port **0x62**.
 
+| Sub-command | Direction | Data |
+|-------------|-----------|------|
+| `0xD0` | IN (params) | Parameter bytes; call `Flush()` when complete |
+| `0xD4` | OUT (reads) | SMBIOS Type 1 product name (ASCII until `0x00`) |
+| `0xD5` | OUT (reads) | SMBIOS Type 1 serial number (ASCII until `0x00`) |
+| `0xD6` | OUT (reads) | SMBIOS Type 1 manufacturer (ASCII until `0x00`) |
+| other `0xDx` | OUT (reads) | `0x0000` (two `0x00` bytes, unsupported response) |
+
 ### Sub-command 0xD0 (parameter write)
 
 | Step | Port | Value |
@@ -15,6 +23,14 @@ Dispatches vendor command **0x59** on port **0x66** with sub-commands on port **
 | 3+ | 0x62 | parameter bytes |
 
 Call **`Flush()`** on the protocol when the command packet is complete (unless the buffer fills, which auto-dispatches).
+
+### Sub-command 0xD4 (SMBIOS Type 1 product name read)
+
+| Step | Port | Direction | Value |
+|------|------|-----------|-------|
+| 1 | 0x66 | OUT | `0x59` |
+| 2 | 0x62 | OUT | `0xD4` |
+| 3+ | 0x62 | IN | product name ASCII bytes until `0x00` |
 
 ### Sub-command 0xD5 (SMBIOS Type 1 serial read)
 
@@ -29,7 +45,7 @@ Call **`Flush()`** on the protocol when the command packet is complete (unless t
 | Step | Port | Direction | Value |
 |------|------|-----------|-------|
 | 1 | 0x66 | OUT | `0x59` |
-| 2 | 0x62 | OUT | unsupported `0xDx` (not `0xD0`, `0xD5`, `0xD6`) |
+| 2 | 0x62 | OUT | unsupported `0xDx` (not `0xD0`, `0xD4`, `0xD5`, `0xD6`) |
 | 3–4 | 0x62 | IN | `0x00`, `0x00` (16-bit unsupported response `0x0000`) |
 
 ### Sub-command 0xD6 (SMBIOS Type 1 manufacturer read)
@@ -55,26 +71,23 @@ Dispatch->ProcessWrite (0x62, DataByte);
 Dispatch->Flush ();
 ```
 
-3. For 0xD5 serial read:
+3. For 0xD4 product name read:
+
+```c
+Dispatch->ProcessWrite (0x66, 0x59);
+Dispatch->ProcessWrite (0x62, 0xD4);
+while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
+  // consume Byte until NUL
+}
+```
+
+4. For 0xD5 serial read:
 
 ```c
 Dispatch->ProcessWrite (0x66, 0x59);
 Dispatch->ProcessWrite (0x62, 0xD5);
 while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
   // consume Byte until NUL
-}
-```
-
-4. For unsupported 0xDx (example `0xD8`):
-
-```c
-UINT8  Byte;
-UINTN  Index;
-
-Dispatch->ProcessWrite (0x66, 0x59);
-Dispatch->ProcessWrite (0x62, 0xD8);
-for (Index = 0; Index < 2; Index++) {
-  Dispatch->ProcessRead (0x62, &Byte);  // expect 0x00 each
 }
 ```
 
@@ -88,7 +101,20 @@ while (EFI_SUCCESS == Dispatch->ProcessRead (0x62, &Byte)) {
 }
 ```
 
-6. Register a custom handler for 0xD0:
+6. For unsupported 0xDx (example `0xD8`):
+
+```c
+UINT8  Byte;
+UINTN  Index;
+
+Dispatch->ProcessWrite (0x66, 0x59);
+Dispatch->ProcessWrite (0x62, 0xD8);
+for (Index = 0; Index < 2; Index++) {
+  Dispatch->ProcessRead (0x62, &Byte);  // expect 0x00 each
+}
+```
+
+7. Register a custom handler for 0xD0:
 
 ```c
 Dispatch->Register59D0Handler (MyHandler59D0);

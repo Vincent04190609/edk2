@@ -1,5 +1,5 @@
 /** @file
-  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD5, 0xD6; unsupported 0xDx returns 0x0000.
+  ACPI EC I/O dispatch library — cmd 0x59 / sub-commands 0xD0, 0xD4, 0xD5, 0xD6; unsupported 0xDx returns 0x0000.
 
   Copyright (c) 2026, Onboarding Project. SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -19,18 +19,20 @@ typedef enum {
   AcpiEcDispatchStateUnsupported,
 } ACPI_EC_DISPATCH_STATE;
 
-STATIC ACPI_EC_DISPATCH_STATE       mState = AcpiEcDispatchStateIdle;
-STATIC UINT8                        mPendingCmd;
-STATIC UINT8                        mPendingSubCmd;
+STATIC ACPI_EC_DISPATCH_STATE            mState = AcpiEcDispatchStateIdle;
+STATIC UINT8                             mPendingCmd;
+STATIC UINT8                             mPendingSubCmd;
 STATIC ONBOARDING_ACPI_EC_59_D0_HANDLER  mHandler59D0 = NULL;
-STATIC UINT8                        *mParamBuffer = NULL;
-STATIC UINTN                        mParamSize;
-STATIC UINTN                        mParamCapacity;
-STATIC CHAR8                        mSerial59D5[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
-STATIC UINTN                        mSerial59D5ReadIndex;
-STATIC CHAR8                        mManufacturer59D6[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
-STATIC UINTN                        mManufacturer59D6ReadIndex;
-STATIC UINTN                        mUnsupportedReadIndex;
+STATIC UINT8                             *mParamBuffer = NULL;
+STATIC UINTN                             mParamSize;
+STATIC UINTN                             mParamCapacity;
+STATIC CHAR8                             mProductName59D4[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
+STATIC UINTN                             mProductName59D4ReadIndex;
+STATIC CHAR8                             mSerial59D5[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
+STATIC UINTN                             mSerial59D5ReadIndex;
+STATIC CHAR8                             mManufacturer59D6[ONBOARDING_ACPI_EC_59_STRING_MAX + 1];
+STATIC UINTN                             mManufacturer59D6ReadIndex;
+STATIC UINTN                             mUnsupportedReadIndex;
 
 STATIC
 BOOLEAN
@@ -39,6 +41,7 @@ IsSupported59SubCmd (
   )
 {
   return (SubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D0) ||
+         (SubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D4) ||
          (SubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D5) ||
          (SubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D6);
 }
@@ -49,13 +52,15 @@ OnboardingAcpiEcIoDispatchLibInit (
   VOID
   )
 {
-  mState                 = AcpiEcDispatchStateIdle;
-  mPendingCmd            = 0;
-  mPendingSubCmd         = 0;
-  mHandler59D0           = NULL;
-  mParamBuffer           = NULL;
-  mParamSize             = 0;
-  mParamCapacity         = 0;
+  mState                     = AcpiEcDispatchStateIdle;
+  mPendingCmd                = 0;
+  mPendingSubCmd             = 0;
+  mHandler59D0               = NULL;
+  mParamBuffer               = NULL;
+  mParamSize                 = 0;
+  mParamCapacity             = 0;
+  mProductName59D4[0]        = '\0';
+  mProductName59D4ReadIndex  = 0;
   mSerial59D5[0]             = '\0';
   mSerial59D5ReadIndex       = 0;
   mManufacturer59D6[0]       = '\0';
@@ -86,6 +91,15 @@ Cache59String (
   CopyMem (Dest, Source, CopyLen);
   Dest[CopyLen] = '\0';
   DEBUG ((DEBUG_INFO, "AcpiEcDispatch: %a cached (%u bytes): %a\n", LogLabel, CopyLen, Dest));
+}
+
+VOID
+EFIAPI
+OnboardingAcpiEcIoDispatchLibSet59D4ProductName (
+  IN CONST CHAR8  *ProductNameAscii
+  )
+{
+  Cache59String (mProductName59D4, ProductNameAscii, "59/D4 product name");
 }
 
 VOID
@@ -207,8 +221,9 @@ ProcessCmdPortWrite (
   }
 
   ResetParamBuffer ();
-  mPendingCmd    = Value;
-  mPendingSubCmd = 0;
+  mPendingCmd                = Value;
+  mPendingSubCmd             = 0;
+  mProductName59D4ReadIndex  = 0;
   mSerial59D5ReadIndex       = 0;
   mManufacturer59D6ReadIndex = 0;
   mUnsupportedReadIndex      = 0;
@@ -239,6 +254,13 @@ ProcessDataPortWrite (
         if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D0) {
           mState = AcpiEcDispatchStateCollectParams;
           DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD0, collecting params on 0x62\n"));
+          return EFI_SUCCESS;
+        }
+
+        if (Value == ONBOARDING_ACPI_EC_SUBCMD_59_D4) {
+          mState                    = AcpiEcDispatchStateReadResponse;
+          mProductName59D4ReadIndex = 0;
+          DEBUG ((DEBUG_INFO, "AcpiEcDispatch: sub-command 0xD4, product name read ready on 0x62\n"));
           return EFI_SUCCESS;
         }
 
@@ -313,6 +335,20 @@ ProcessDataPortRead (
 
   if (mState != AcpiEcDispatchStateReadResponse) {
     return EFI_NOT_READY;
+  }
+
+  if (mPendingSubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D4) {
+    Byte   = mProductName59D4[mProductName59D4ReadIndex];
+    *Value = (UINT8)Byte;
+
+    if (Byte == '\0') {
+      mState = AcpiEcDispatchStateIdle;
+      DEBUG ((DEBUG_INFO, "AcpiEcDispatch: 59/D4 product name read complete\n"));
+      return EFI_SUCCESS;
+    }
+
+    mProductName59D4ReadIndex++;
+    return EFI_SUCCESS;
   }
 
   if (mPendingSubCmd == ONBOARDING_ACPI_EC_SUBCMD_59_D5) {

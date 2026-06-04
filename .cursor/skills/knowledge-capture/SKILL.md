@@ -86,6 +86,7 @@ If KB files live outside the edk2 git repo, remind the user to commit/push the `
 - [ ] Build commands
 - [ ] Validation / acceptance criteria
 - [ ] Pitfalls and related docs
+- [ ] **ACPI EC sub-command added or changed** → create or update `development-guides/playbooks/acpi-ec-dispatch-59-dXX.md` and update `playbooks/README.md` index; verify the sub-command constant is in `OnboardingPkg/Include/Protocol/OnboardingAcpiEcIoDispatch.h` and `IsSupported59SubCmd()` in the dispatch library
 
 ## Runbook content checklist (bugs)
 
