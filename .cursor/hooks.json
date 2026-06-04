@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "type": "prompt",
+        "timeout": 45,
+        "loop_limit": 1,
+        "prompt": "You are a completion gate that enforces knowledge-base (KB) write-back for this BIOS/EDK2 repo. Decide whether the agent may stop.\n\nReview what this session actually did, then apply this rule:\n\n1. Did the session implement a BIOS FEATURE or fix a BUG? Signals: new/changed source under OnboardingPkg (or other Pkg), a new ACPI EC sub-command (e.g. 0x59 / 0xDx), SMBIOS/HII/PCD/token changes, a new driver/library, a boot-hang or build-failure fix, or a Test/Formal BIOS version bump.\n   - If NO (the session was only Q&A, docs, refactor with no behavior change, or pure KB/rules edits): ALLOW STOP. Do not inject a follow-up.\n\n2. If YES, check whether the matching KB write-back was completed AND verified on disk THIS session:\n   - A playbook under PROJECT_KB_ROOT/development-guides/playbooks/ (feature) or a runbook under PROJECT_KB_ROOT/troubleshooting/runbooks/ (bug) was created or updated, its index README updated, and the file was read back from its /mnt/<drive>/... path to confirm it landed.\n   - For a version bump: VersionList.xlsx was updated and re-read to verify the new row.\n   - If the write-back was done and verified: ALLOW STOP.\n\n3. If feature/bugfix work happened but the KB write-back is MISSING or UNVERIFIED: DO NOT allow a clean stop. Instead continue the agent with a follow-up instruction:\n   \"Knowledge-base write-back is not complete. Per .cursor/rules/knowledge-capture.mdc and the knowledge-capture skill: create or update the matching playbook/runbook under PROJECT_KB_ROOT, update its index README. Resolve paths from project-knowledge.mdc and TRANSLATE d:\\ to /mnt/d/ (WSL). The KB is OUTSIDE the workspace, so perform the write with ELEVATED permissions, then READ THE FILE BACK from its /mnt/<drive>/... path to confirm it landed. Report the verified file paths. If the user explicitly opted out of KB write-back this session, say so and stop.\"\n\nKeep the follow-up to a single, actionable turn. Honor an explicit user opt-out as a reason to allow stop."
+      }
+    ]
+  }
+}
