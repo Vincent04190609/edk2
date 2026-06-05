@@ -14,6 +14,7 @@
 #include <Library/DebugLib.h>                 // ASSERT_EFI_ERROR()
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
+#include <Library/RngLib.h>
 #include <Library/UefiBootServicesTableLib.h> // gBS
 #include <Protocol/Smbios.h>                  // EFI_SMBIOS_PROTOCOL
 
@@ -90,6 +91,37 @@ SmbiosTableLength (
   Length = ((UINTN)AChar - (UINTN)SmbiosTable.Raw + 2);
 
   return Length;
+}
+
+#define ONBOARDING_SMBIOS_SERIAL_HEX_LEN  16
+
+/**
+  Fill Serial with a random uppercase hex string (16 characters).
+**/
+STATIC
+VOID
+GenerateRandomSerialHex (
+  OUT CHAR8  *Serial,
+  IN  UINTN   SerialMax
+  )
+{
+  STATIC CONST CHAR8  Hex[] = "0123456789ABCDEF";
+  UINT64              Rand;
+  UINTN               Index;
+
+  ASSERT (Serial != NULL);
+  ASSERT (SerialMax > ONBOARDING_SMBIOS_SERIAL_HEX_LEN);
+
+  if (!GetRandomNumber64 (&Rand)) {
+    Rand = 0x0FEDCBA987654321ULL;
+  }
+
+  for (Index = 0; Index < ONBOARDING_SMBIOS_SERIAL_HEX_LEN; Index++) {
+    Serial[ONBOARDING_SMBIOS_SERIAL_HEX_LEN - 1 - Index] = Hex[Rand & 0x0F];
+    Rand >>= 4;
+  }
+
+  Serial[ONBOARDING_SMBIOS_SERIAL_HEX_LEN] = '\0';
 }
 
 /**
@@ -211,10 +243,14 @@ InstallAllStructures (
   //
   {
     CHAR8   *Type1;
+    CHAR8   SerialBuf[ONBOARDING_SMBIOS_SERIAL_HEX_LEN + 1];
     CHAR8   *ManuStr      = "Vibe-Factory";
     CHAR8   *ProductStr   = "OVMF";
     CHAR8   *VersionStr   = "1.0";
-    CHAR8   *SerialStr    = "0FEDCBA987654321";
+    CHAR8   *SerialStr;
+
+    GenerateRandomSerialHex (SerialBuf, sizeof (SerialBuf));
+    SerialStr             = SerialBuf;
     UINTN   ManuLen       = AsciiStrLen (ManuStr);
     UINTN   ProductLen    = AsciiStrLen (ProductStr);
     UINTN   VersionLen    = AsciiStrLen (VersionStr);

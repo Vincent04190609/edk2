@@ -50,7 +50,7 @@ fi
 
 echo "===== Parsed strings (Type 1 / Type 2 markers) ====="
 if [ -e /sys/firmware/dmi/tables/DMI ]; then
-  strings /sys/firmware/dmi/tables/DMI | grep -E "^(QEMU|Vibe-Factory|OVMF|Standard PC|pc-q35|0FEDCBA|T83)" || true
+  strings /sys/firmware/dmi/tables/DMI | grep -E "^(QEMU|Vibe-Factory|OVMF|Standard PC|pc-q35|[0-9A-F]{16}|T[0-9]+)" || true
 fi
 
 echo "===== done ====="
