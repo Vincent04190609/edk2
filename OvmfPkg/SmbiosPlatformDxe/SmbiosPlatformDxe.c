@@ -244,7 +244,7 @@ InstallAllStructures (
   {
     CHAR8   *Type1;
     CHAR8   SerialBuf[ONBOARDING_SMBIOS_SERIAL_HEX_LEN + 1];
-    CHAR8   *ManuStr      = "Vibe-Factory";
+    CHAR8   *ManuStr      = "Vincent-Factory";
     CHAR8   *ProductStr   = "OVMF";
     CHAR8   *VersionStr   = "1.0";
     CHAR8   *SerialStr;

@@ -509,10 +509,10 @@
 !endif
 
 [PcdsFixedAtBuild]
-  # SMBIOS Manufacturer and BIOS Version for JIRA-523-2
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vibe-Factory"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T84"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-05 12:33:14"
+  # SMBIOS Manufacturer and BIOS Version for JIRA-523-3
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vincent-Factory"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T85"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-05 12:51:25"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
