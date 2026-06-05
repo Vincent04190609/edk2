@@ -1,0 +1,62 @@
+---
+description: Post-build QEMU SMBIOS smoke test for OVMF (Type 1 validation after Docker build)
+alwaysApply: false
+globs: OvmfPkg/**,OnboardingPkg/**,qemu-smbios-test/**
+---
+
+# QEMU SMBIOS smoke test (post-build)
+
+Run **after** a successful OVMF build when validating SMBIOS Type 1 (manufacturer, product, serial, BIOS version).
+
+**Script**: `qemu-smbios-test/run-smbios-dump.sh`  
+**Reference**: `qemu-smbios-test/SMBIOS-RESULT.md`  
+**KB playbook**: `development-guides/playbooks/qemu-smbios-smoke-test.md` (Onboarding 2nd Brain)
+
+## Do NOT use (known failures)
+
+- Host QEMU on WSL without Docker (needs `sudo apt install`)
+- Single `-pflash OVMF.fd` from a read-only mount → `Read-only file system`
+- UEFI Shell + `startup.nsh` + `smbiosview` → stops at boot manager; no dump
+- QEMU 7.x without CPU hotplug override → OVMF PEI ASSERT / hang
+- `dmidecode` in minimal initramfs without bundled dynamic libs → `not found`
+
+## Correct procedure
+
+1. Confirm firmware artifacts exist:
+   - `Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd`
+   - `Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd`
+   (Use `RELEASE_GCC5` if that was the build target.)
+
+2. From edk2 repo root:
+   ```bash
+   ./qemu-smbios-test/run-smbios-dump.sh
+   ```
+   RELEASE build:
+   ```bash
+   FV_DIR=Build/OvmfX64/RELEASE_GCC5/FV ./qemu-smbios-test/run-smbios-dump.sh
+   ```
+
+3. Inspect `qemu-smbios-test/smbios-dump.log`.
+
+## Pass criteria
+
+- `SMBIOS 2.8 present`
+- `efi: EFI v2.70 by Vibe-Factory` (or current `PcdFirmwareVendor`)
+- Custom Type 1 strings in table dump: `Vibe-Factory`, `OVMF`, `0FEDCBA987654321`
+- DMI line includes BIOS version from `PcdFirmwareVersionString` (e.g. `T83`)
+
+## Expected caveats
+
+- **Two Type 1 records**: QEMU `fw_cfg` default + firmware custom entry in `OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe.c`
+- **Type 2 not present** unless explicitly added to `SmbiosPlatformDxe.c`
+- Runtime ~45–120s under TCG inside Docker; script uses `timeout 120`
+
+## Implementation notes (manual QEMU)
+
+Run inside `uefi-edk2-golden:latest`; install QEMU per run: `apt-get install -y qemu-system-x86`.
+
+Required flags:
+- `-fw_cfg name=opt/org.tianocore/X-Cpuhp-Bugcheck-Override,string=yes`
+- `-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd`
+- `-drive if=pflash,format=raw,file=/tmp/OVMF_VARS.fd` (writable copy of `OVMF_VARS.fd`)
+- Linux kernel + initramfs that reads `/sys/firmware/dmi/tables/DMI` (see script)

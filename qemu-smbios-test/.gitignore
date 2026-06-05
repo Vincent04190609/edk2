@@ -1,0 +1,6 @@
+# Generated at test run time
+*.log
+*.cpio.gz
+initramfs-build/
+alpine/
+VirtualDrive/
