@@ -1,49 +1,178 @@
-# Agent workflows — Feature-Jira-523 (edk2 / OVMF)
+# Agent workflows — edk2 / OVMF (OnboardingPkg)
 
-Guidance for Cursor and Paperclip agents working in this firmware tree.
+Guidance for AI agents (Cursor, Claude, Gemini CLI, Fleet, and others) working in this firmware tree.
 
-## BIOS Engineer
+## BIOS Engineer Role
 
-**Role**: Build and validate OVMF firmware with OnboardingPkg features.
+**You are a senior BIOS engineer operating in Agent mode (implementation mode).**
 
-**Knowledge base** (read first per `lookup-order`):
+- Use tools, edit files, run builds, and execute the repo workflow — do not stay in ask-only mode unless blocked.
+- Follow Cursor rules (`.cursor/rules`) and knowledge-base or playbook documents in this repository.
+- Work only in this worktree. Do not assume context from other tasks or branches.
 
-- Onboarding `PROJECT_KB_ROOT` → [DockerImage README](file:///mnt/d/VibeCoding/Projects/Onboarding/DockerImage/README.md)
-- Playbook: [qemu-smbios-smoke-test](file:///mnt/d/VibeCoding/Projects/Onboarding/development-guides/playbooks/qemu-smbios-smoke-test.md)
+## Knowledge Base
 
-### Build workflow
+Read the knowledge base **before** writing code. Paths are resolved per `project-knowledge.mdc` / `lookup-order.mdc`:
 
-1. Validate environment (`docker images uefi-edk2-golden`).
-2. Mount repo into golden container; `source edksetup.sh BaseTools`.
-3. Build: `build -a X64 -t GCC5 -p OvmfPkg/OvmfPkgX64.dsc` (add `-b RELEASE` if needed).
-4. Verify `Build/OvmfX64/*/FV/OVMF_CODE.fd`, `OVMF_VARS.fd`, `OVMF.fd`.
+| What | Path |
+|------|------|
+| Project KB entry | `PROJECT_KB_ROOT/README.md` |
+| Development guides | `PROJECT_KB_ROOT/development-guides/` |
+| Playbooks (how-to) | `PROJECT_KB_ROOT/development-guides/playbooks/` |
+| Runbooks (bug fixes) | `PROJECT_KB_ROOT/troubleshooting/runbooks/` |
+| BIOS release rules | `PROJECT_KB_ROOT/development-guides/BIOS-Release-Version-Rules.md` |
+| VersionList | `PROJECT_KB_ROOT/development-guides/VersionList.xlsx` |
 
-### Post-build validation: QEMU SMBIOS (Type 1)
+> **Path translation**: `PROJECT_KB_ROOT` is a Windows path defined in `project-knowledge.mdc`.
+> On Linux/WSL: translate `d:\...` → `/mnt/d/...`.
+> Inside a Fleet container: use `/home/workspace/project_kb/{ProjectName}/` — see `role.md`.
 
-After a successful build, run the SMBIOS emulation smoke test:
+## OVMF Build
 
 ```bash
-./qemu-smbios-test/run-smbios-dump.sh
-# RELEASE:
-FV_DIR=Build/OvmfX64/RELEASE_GCC5/FV ./qemu-smbios-test/run-smbios-dump.sh
+# From the worktree root — clear any stale EDK2 env vars first
+unset WORKSPACE EDK_TOOLS_PATH PACKAGES_PATH CONF_PATH EDK2_WORKSPACE 2>/dev/null || true
+source edksetup.sh BaseTools
+build -a X64 -t GCC5 -p OvmfPkg/OvmfPkgX64.dsc 2>&1 | tee BuildLogs/fleet-build.log
+
+# Verify artifacts
+test -f Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd && echo BUILD PASS || (echo BUILD FAIL; exit 1)
 ```
 
-**Check** `qemu-smbios-test/smbios-dump.log` for:
+Add `-b RELEASE` when the task requires a release build.
 
-- `SMBIOS 2.8 present`
-- `efi: EFI v2.70 by Vibe-Factory`
-- Custom Type 1: `Vibe-Factory`, `OVMF`, `0FEDCBA987654321`
+Expected artifacts: `Build/OvmfX64/*/FV/OVMF_CODE.fd`, `OVMF_VARS.fd`, `OVMF.fd`.
 
-**Do not fail** if SMBIOS Type 2 is missing (not implemented yet).
+## Post-Build Verification: QEMU SMBIOS
 
-**Mandatory constraints** (see `.cursor/rules/qemu-smbios-test.mdc`):
+When the task involves SMBIOS changes, run the smoke test after a successful build:
 
-- Run QEMU inside Docker golden image (install `qemu-system-x86` in container).
-- Use split pflash: `OVMF_CODE.fd` (ro) + writable `OVMF_VARS.fd` copy.
+```bash
+# Install QEMU if not present
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq && apt-get install -y -qq qemu-system-x86 busybox-static cpio gzip linux-image-virtual >/dev/null
+
+# Run smoke test
+FV_DIR=Build/OvmfX64/DEBUG_GCC5/FV ./qemu-smbios-test/run-smbios-dump.sh
+```
+
+Check `qemu-smbios-test/smbios-dump.log` for the expected values defined in the **ticket scope** and project KB. See `qemu-smbios-test/SMBIOS-RESULT.md` for expected Type 1 behavior.
+
+**Constraints:**
+- Use split pflash: `OVMF_CODE.fd` (read-only) + writable copy of `OVMF_VARS.fd`.
 - Include Tianocore CPU hotplug `fw_cfg` override on QEMU 7.x.
+- **Do not fail** if SMBIOS Type 2 is absent (not implemented).
+- **Avoid**: UEFI Shell `smbiosview` auto-boot; read-only single `OVMF.fd` pflash.
 
-**Avoid**: UEFI Shell `smbiosview` auto-boot, host QEMU without Docker, read-only single `OVMF.fd` pflash.
+For tasks that do not touch SMBIOS, run whatever verification the ticket specifies (or none).
 
-### Agent prompt (short)
+## Test / Formal BIOS Release
 
-> Build OVMF in Docker golden image. After build, run `./qemu-smbios-test/run-smbios-dump.sh` and confirm Type 1 strings in `smbios-dump.log`. See `qemu-smbios-test/SMBIOS-RESULT.md` for expected dual Type 1 behavior.
+When the task requests a **test BIOS** or **release BIOS**, follow this sequence **before** the build:
+
+1. Read `VersionList.xlsx` → find the latest version row.
+2. Calculate the next version (e.g. `T85` → `T86` for test; `01.00` → `01.01` for formal).
+3. **Append the new row** to `VersionList.xlsx` (version + description + date). Re-read to verify — do not skip; the spreadsheet is the source of truth.
+4. Update `PcdFirmwareVersionString` (and `PcdFirmwareReleaseDateString`) in `OvmfPkg/OvmfPkgX64.dsc` to match the new row.
+5. Build → verify → proceed to delivery.
+
+If the Excel write fails, **stop and report** — do not proceed with a silent version bump.
+
+Use the **`bios-release-version`** skill (`.cursor/skills/bios-release-version/SKILL.md`) for detailed steps.
+
+## Workflow Phases
+
+For each phase, emit the required brief output **at the start of your reply** so the user can follow progress. Then continue with the work.
+
+### Plan
+**Emit at start:**
+```
+## Plan — <ticket ID>
+Scope: <one sentence from ticket>
+Baseline: <branch name>, latest BIOS <version>
+Steps:
+1. <step>
+2. <step>
+…
+```
+Read workflow docs and `.cursor/rules`. Produce this short plan, then **continue immediately** into implementation — do not wait for approval.
+
+### Knowledge Check
+**Emit at start:**
+```
+## Knowledge Check
+Reading: <list of KB files / playbooks being consulted>
+```
+Consult relevant KB playbooks and runbooks before writing code. Note any gaps or conflicts found.
+
+### Vibe Code
+**Emit at start:**
+```
+## Vibe Code
+Implementing: <one-line description of the change>
+Files: <file paths being edited>
+```
+Make the code changes, iterate per project workflow.
+
+### Build
+**Emit at start:**
+```
+## Build
+Running: build -a X64 -t GCC5 -p OvmfPkg/OvmfPkgX64.dsc
+Log: BuildLogs/fleet-build.log
+```
+Run the OVMF build directly in the worktree. Run the verification the task requires. Report pass/fail with log evidence. Stay on this phase until build and verification both pass.
+
+### Security Check
+**Emit at start:**
+```
+## Security Check
+Running: <what checks are being executed>
+```
+Run security or validation steps required by the repo workflow when applicable.
+
+### Approval
+**Emit at start:**
+```
+## Approval
+Changes ready for review — not yet committed.
+```
+Stop before `git commit` / `git push` / PR. Summarize all changes made and test evidence for human review. Include the verification evidence table. End with `DELIVERY_REVIEW_REQUIRED: yes`.
+
+### Done
+**Emit at start:**
+```
+## Done
+Published: <commit hash> → <branch> | PR: <URL or "none">
+```
+Execute git commit, push, and open/update the PR only after the operator approves.
+
+## Build Verification Evidence
+
+After the build and verification step, include this block in your reply:
+
+```
+### Verification evidence (PASS|FAIL)
+
+| Check | Expected | Found |
+|-------|----------|-------|
+| … (per ticket / project workflow) | … | … |
+| Log path | (log path) | … |
+```
+
+End with `VERIFY: pass` on success, or `VERIFY: fail` with mismatch details on failure.
+
+> If the task requires no verification beyond a successful build, state that and still emit `VERIFY: pass` after confirming the artifact exists.
+
+## Knowledge Write-Back
+
+After completing a feature or bugfix, update the knowledge base per `knowledge-capture.mdc`. A task is **not complete** until playbooks/runbooks are updated or the user explicitly opts out.
+
+At the end of the reply where write-back is resolved, emit exactly one of:
+
+```
+KB_UPDATED: yes — <comma-separated list of KB files created/updated>
+KB_UPDATED: skipped (<reason>)
+```
+
+Use `yes` when a playbook or runbook was written and verified on disk. Use `skipped` with a reason when the session had no feature/bugfix work, or the user explicitly opted out. The `stop` hook reads this token to decide whether to allow the session to close.
