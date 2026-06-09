@@ -211,7 +211,7 @@ InstallAllStructures (
   //
   {
     CHAR8   *Type1;
-    CHAR8   *ManuStr      = "Vibe-Factory";
+    CHAR8   *ManuStr      = "Fleet Factory";
     CHAR8   *ProductStr   = "OVMF";
     CHAR8   *VersionStr   = "1.0";
     CHAR8   *SerialStr    = "ABCDEF9876543210";
