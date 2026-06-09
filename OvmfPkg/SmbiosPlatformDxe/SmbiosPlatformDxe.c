@@ -64,6 +64,24 @@ STATIC CONST SMBIOS_TABLE_TYPE1  mOvmfDefaultType1 = {
   0     // SMBIOS_TABLE_STRING       Family
 };
 
+STATIC CONST SMBIOS_TABLE_TYPE2  mOvmfDefaultType2 = {
+  // SMBIOS_STRUCTURE Hdr
+  {
+    EFI_SMBIOS_TYPE_BASEBOARD_INFORMATION,               // UINT8 Type
+    OFFSET_OF (SMBIOS_TABLE_TYPE2, ContainedObjectHandles), // UINT8 Length
+  },
+  1,                              // SMBIOS_TABLE_STRING Manufacturer
+  2,                              // SMBIOS_TABLE_STRING ProductName
+  3,                              // SMBIOS_TABLE_STRING Version
+  4,                              // SMBIOS_TABLE_STRING SerialNumber
+  0,                              // SMBIOS_TABLE_STRING AssetTag
+  { 0 },                          // BASE_BOARD_FEATURE_FLAGS FeatureFlag
+  0,                              // SMBIOS_TABLE_STRING LocationInChassis
+  0,                              // UINT16 ChassisHandle
+  BaseBoardTypeMotherBoard,       // UINT8 BoardType
+  0                               // UINT8 NumberOfContainedObjectHandles
+};
+
 /**
   Get SMBIOS record length.
 
@@ -244,6 +262,50 @@ InstallAllStructures (
     ASSERT_EFI_ERROR (Status);
 
     FreePool (Type1);
+  }
+
+  //
+  // Add OVMF default Type 2 (Base Board Information) table
+  //
+  {
+    CHAR8   *Type2;
+    CHAR8   *ManuStr      = "Fleet Factory";
+    CHAR8   *ProductStr   = "Onboarding";
+    CHAR8   *VersionStr   = "1.0";
+    CHAR8   *SerialStr    = "ABCDEF9876543210";
+    UINTN   ManuLen       = AsciiStrLen (ManuStr);
+    UINTN   ProductLen    = AsciiStrLen (ProductStr);
+    UINTN   VersionLen    = AsciiStrLen (VersionStr);
+    UINTN   SerialLen     = AsciiStrLen (SerialStr);
+    UINTN   Type2FixedSize;
+    UINTN   TotalStrLen;
+
+    Type2FixedSize = OFFSET_OF (SMBIOS_TABLE_TYPE2, ContainedObjectHandles);
+    TotalStrLen    = ManuLen + ProductLen + VersionLen + SerialLen + 5;
+
+    DEBUG ((DEBUG_INFO, "Adding SMBIOS Type 2 with ProductName: %a\n", ProductStr));
+
+    Type2 = AllocateZeroPool (Type2FixedSize + TotalStrLen);
+    if (Type2 == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    CopyMem (Type2, &mOvmfDefaultType2, Type2FixedSize);
+    AsciiStrCpyS (Type2 + Type2FixedSize, ManuLen + 1, ManuStr);
+    AsciiStrCpyS (Type2 + Type2FixedSize + ManuLen + 1, ProductLen + 1, ProductStr);
+    AsciiStrCpyS (Type2 + Type2FixedSize + ManuLen + ProductLen + 2, VersionLen + 1, VersionStr);
+    AsciiStrCpyS (Type2 + Type2FixedSize + ManuLen + ProductLen + VersionLen + 3, SerialLen + 1, SerialStr);
+
+    SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
+    Status       = Smbios->Add (
+                             Smbios,
+                             NULL,
+                             &SmbiosHandle,
+                             (EFI_SMBIOS_TABLE_HEADER *)Type2
+                             );
+    ASSERT_EFI_ERROR (Status);
+
+    FreePool (Type2);
   }
 
   return EFI_SUCCESS;

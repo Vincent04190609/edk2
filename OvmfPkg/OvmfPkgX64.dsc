@@ -511,8 +511,8 @@
 [PcdsFixedAtBuild]
   # SMBIOS Manufacturer and BIOS Version for JIRA-533-2
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Fleet Factory"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T87"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-09 17:35:00"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T88"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-09 11:20:53"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
