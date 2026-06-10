@@ -214,7 +214,7 @@ InstallAllStructures (
     CHAR8   *ManuStr      = "Vibe-Factory";
     CHAR8   *ProductStr   = "OVMF";
     CHAR8   *VersionStr   = "1.0";
-    CHAR8   *SerialStr    = "0FEDCBA987654321";
+    CHAR8   *SerialStr    = "123456789";
     UINTN   ManuLen       = AsciiStrLen (ManuStr);
     UINTN   ProductLen    = AsciiStrLen (ProductStr);
     UINTN   VersionLen    = AsciiStrLen (VersionStr);

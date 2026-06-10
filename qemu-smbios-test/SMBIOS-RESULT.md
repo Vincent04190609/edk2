@@ -31,14 +31,14 @@ Firmware under test:
 | Manufacturer | `Vibe-Factory` |
 | Product Name | `OVMF` |
 | Version | `1.0` |
-| Serial Number | `0FEDCBA987654321` |
+| Serial Number | `123456789` |
 
 Firmware debug log during boot also confirms:
 
 ```
 FirmwareVendor:            "Vibe-Factory"
 FirmwareVersionString:     "T83"
-Adding SMBIOS Type 1 with SerialNumber: 0FEDCBA987654321
+Adding SMBIOS Type 1 with SerialNumber: 123456789
 ```
 
 Linux kernel DMI line (uses first Type 1 + BIOS Type 0):
@@ -70,6 +70,6 @@ Full serial log: `qemu-smbios-test/smbios-dump.log`
 
 ## Implications for OnboardingPkg EC reads (0x59 / 0xD4–0xD6)
 
-`AcpiEcIoDispatchDxe` loads Type 1 strings via `EFI_SMBIOS_PROTOCOL`. With two Type 1 handles present, the DXE loader uses whichever record `GetNext()` returns first — verify that path if EC read-back must always return the `Vibe-Factory` / `0FEDCBA987654321` record.
+`AcpiEcIoDispatchDxe` loads Type 1 strings via `EFI_SMBIOS_PROTOCOL`. With two Type 1 handles present, the DXE loader uses whichever record `GetNext()` returns first — verify that path if EC read-back must always return the `Vibe-Factory` / `123456789` record.
 
 To emulate Type 2 in QEMU, add a Type 2 table in `SmbiosPlatformDxe.c` (similar to the existing custom Type 1 block).
