@@ -49,7 +49,7 @@ python .cursor/scripts/resolve-kb-paths.py --key PROJECT_KB_ROOT
 python .cursor/scripts/resolve-kb-paths.py --format shell
 ```
 
-Output includes `PROJECT_KB_ROOT`, `COMMON_KB_ROOT`, `PROJECT_KB_README`, `CODE_REPO_ROOT`, and flags for out-of-workspace writes.
+Output includes `PROJECT_KB_ROOT`, `COMMON_KB_ROOT`, `PROJECT_KB_README`, `ENGINEERING_SPEC_DOC`, `CODE_REPO_ROOT`, and flags for out-of-workspace writes.
 
 **Rules reference**: `.cursor/rules/project-knowledge.mdc` (always read config + run resolver before KB I/O).
 

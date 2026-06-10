@@ -22,6 +22,7 @@ Read the knowledge base **before** writing code. Paths are resolved from **`.cur
 | Runbooks (bug fixes) | `{PROJECT_KB_ROOT}/troubleshooting/runbooks/` |
 | BIOS release rules | `{PROJECT_KB_ROOT}/development-guides/BIOS-Release-Version-Rules.md` |
 | VersionList | `{PROJECT_KB_ROOT}/development-guides/VersionList.xlsx` |
+| Engineering Spec (Word) | `ENGINEERING_SPEC_DOC` — see **bios-engineering-spec** skill |
 
 > **Developer switch**: set `mode` in `.cursor/kb-path-config.json` — **`fleet`** (default, Docker bind mounts) or **`windows`** (native `d:\...`). Fleet does not read/write KB; only agent rules/skills do.
 

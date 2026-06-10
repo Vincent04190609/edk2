@@ -32,6 +32,7 @@ Resolved variables:
 | `PROJECT_KB_ROOT` | `{projects_root}/{project_name}` for active mode |
 | `COMMON_KB_ROOT` | Shared specs, coding rules, commit rules |
 | `PROJECT_KB_README` | `{PROJECT_KB_ROOT}/README.md` |
+| `ENGINEERING_SPEC_DOC` | `{PROJECT_KB_ROOT}/development-guides/playbooks/Engineering Spec.docx` (override via `engineering_spec_relative_path`) |
 | `COMMON_FROM_PROJECT` | `../../Common` (relative links inside KB markdown) |
 | `CODE_REPO_ROOT` / `CODE_REPO_URL` | This firmware workspace |
 

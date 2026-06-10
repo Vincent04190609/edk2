@@ -25,9 +25,11 @@ Captures reusable FW engineering knowledge into the Primary Knowledge Repository
 
 | User task | Document type | Target folder |
 |-----------|---------------|---------------|
-| New feature, enhancement, config change | **Playbook** | `development-guides/playbooks/` |
+| New feature, enhancement, config change | **Playbook** + **Engineering Spec** | `development-guides/playbooks/` + `Engineering Spec.docx` via **bios-engineering-spec** skill |
 | Bug fix, boot hang, regression | **Runbook** | `troubleshooting/runbooks/` |
 | Release / test or formal version | **Version log** | Run **bios-release-version** skill first → `development-guides/VersionList.xlsx` (+ `CHANGELOG.md` if used) |
+
+For **SMBIOS, Setup menu, or customer-visible features**, also update **`Engineering Spec.docx`** via the **bios-engineering-spec** skill.
 
 ## Workflow
 
@@ -38,6 +40,8 @@ Captures reusable FW engineering knowledge into the Primary Knowledge Repository
 3. If a doc exists → **update** it (add section, refresh steps). If not → **create** from template.
 
 ### Step 2 — Draft the document
+
+For **features**, also run the **bios-engineering-spec** skill (`.cursor/skills/bios-engineering-spec/SKILL.md`) to update **`Engineering Spec.docx`** when SMBIOS, Setup menu, or other customer-visible behavior changes.
 
 Copy structure from:
 
@@ -135,6 +139,7 @@ Task done. Update project knowledge base (playbook or runbook) and show paths fo
 
 - `.cursor/rules/knowledge-capture.mdc` — enforcement
 - `.cursor/rules/lookup-order.mdc` — read order
+- `.cursor/skills/bios-engineering-spec/SKILL.md` — Engineering Spec.docx updates for SMBIOS/Setup/features
 - `.cursor/skills/bios-release-version/SKILL.md` — Test/Formal version bump workflow
 - `development-guides/BIOS-Release-Version-Rules.md` — versioning rules (referenced by bios-release-version skill)
 - `DockerImage/README.md` — build environment

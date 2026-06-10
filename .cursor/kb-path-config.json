@@ -14,5 +14,6 @@
   "code_repo": {
     "root": "d:\\SourceCode\\BIOS_Project\\edk2_0609_Org\\edk2",
     "url": "https://github.com/Vincent04190609/edk2.git"
-  }
+  },
+  "engineering_spec_relative_path": "development-guides/playbooks/Engineering Spec.docx"
 }

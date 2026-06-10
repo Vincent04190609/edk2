@@ -120,12 +120,21 @@ def resolve_paths(config: dict) -> dict:
     elif code_repo_root:
         code_repo_root = normalize_slashes(code_repo_root)
 
+    spec_relative = config.get(
+        "engineering_spec_relative_path",
+        "development-guides/playbooks/Engineering Spec.docx",
+    )
+    engineering_spec_doc = normalize_slashes(
+        join_path(project_kb_root, spec_relative)
+    )
+
     return {
         "mode": mode,
         "project_name": project_name,
         "PROJECT_KB_ROOT": project_kb_root,
         "COMMON_KB_ROOT": common_kb_root,
         "PROJECT_KB_README": project_kb_readme,
+        "ENGINEERING_SPEC_DOC": engineering_spec_doc,
         "COMMON_FROM_PROJECT": "../../Common",
         "CODE_REPO_ROOT": code_repo_root,
         "CODE_REPO_URL": code_repo.get("url", ""),
