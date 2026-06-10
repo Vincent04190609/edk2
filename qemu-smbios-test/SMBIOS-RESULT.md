@@ -29,7 +29,7 @@ Firmware under test:
 | Field | Value |
 |-------|-------|
 | Manufacturer | `Vibe-Factory` |
-| Product Name | `OVMF` |
+| Product Name | `Onboarding` |
 | Version | `1.0` |
 | Serial Number | `0FEDCBA987654321` |
 

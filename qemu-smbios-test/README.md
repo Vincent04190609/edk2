@@ -40,5 +40,5 @@ QEMU is installed inside the container at run time (`qemu-system-x86`); it is no
 
 - `SMBIOS 2.8 present` in log
 - `efi: EFI v2.70 by Vibe-Factory`
-- Custom Type 1 strings: `Vibe-Factory`, `OVMF`, `0FEDCBA987654321`
+- Custom Type 1 strings: `Vibe-Factory`, `Onboarding`, `0FEDCBA987654321`
 - Type 2: absent unless added in `SmbiosPlatformDxe.c` (expected today)
