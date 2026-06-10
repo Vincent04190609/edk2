@@ -2,9 +2,12 @@
 name: knowledge-capture
 description: >-
   Update the Primary Knowledge Repository after implementing BIOS features or fixing bugs.
-  Use when completing feature work (SMBIOS, setup menu, drivers, PCDs), bugfixes (boot hang,
-  build failures), or when the user asks to document, capture, or update the knowledge base,
-  playbook, or runbook. Also use when the user says "task done" and knowledge write-back is required.
+  Use when completing feature work (SMBIOS, system product name, Type 1, setup menu, drivers,
+  PCDs), bugfixes (boot hang, build failures), or when the user asks to document, capture,
+  or update the knowledge base, playbook, or runbook. For SMBIOS/Setup/HII features you MUST
+  also invoke bios-engineering-spec skill to update Engineering Spec.docx — read that skill
+  at task start, not only at write-back. Also use when the user says "task done" and knowledge
+  write-back is required.
 ---
 
 # Knowledge Capture (Write-Back to 2nd Brain)
@@ -32,6 +35,14 @@ Captures reusable FW engineering knowledge into the Primary Knowledge Repository
 For **SMBIOS, Setup menu, or customer-visible features**, also update **`Engineering Spec.docx`** via the **bios-engineering-spec** skill.
 
 ## Workflow
+
+### Step 0 — Engineering Spec (features with visible behavior)
+
+If the task is **SMBIOS, Setup menu, HII, or customer-visible firmware behavior**:
+
+1. **Read** `.cursor/skills/bios-engineering-spec/SKILL.md` immediately (do not wait until write-back).
+2. Run `read-engineering-spec.py` to see current spec rows **before** editing edk2.
+3. After firmware changes, run `update-engineering-spec.py` and verify before marking done.
 
 ### Step 1 — Classify and search
 

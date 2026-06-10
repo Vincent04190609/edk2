@@ -36,8 +36,9 @@ Always update the **index README** in that folder and link from `development-gui
 1. **Resolve paths** — run `resolve-kb-paths.py`.
 2. **Check existing docs** — Search playbooks/runbooks before writing; update an existing doc if the topic matches.
 3. **Write or update** — Use the templates in each folder (`TEMPLATE-*.md`).
-4. **Index** — Add a link in the folder `README.md`.
-5. **Report to user** — List every knowledge-base file created or updated and ask for review before committing KB changes (unless user says to commit).
+4. **Engineering Spec (feature work)** — For **SMBIOS, Setup menu, HII, or any firmware-visible change**, you **MUST** read and follow **`.cursor/skills/bios-engineering-spec/SKILL.md`**: read spec before coding, update `Engineering Spec.docx` before marking done. See **`engineering-spec-sync.mdc`**.
+5. **Index** — Add a link in the folder `README.md`.
+6. **Report to user** — List every knowledge-base file created or updated (playbook **and** `Engineering Spec.docx` when applicable) and ask for review before committing KB changes (unless user says to commit).
 
 For detailed steps, use the **knowledge-capture** skill (`.cursor/skills/knowledge-capture/SKILL.md`).
 

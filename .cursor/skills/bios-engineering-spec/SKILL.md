@@ -1,10 +1,13 @@
 ---
 name: bios-engineering-spec
 description: >-
-  Read and update the project Engineering Spec Word document (.docx) when adding or
-  modifying BIOS features (SMBIOS, Setup menu, HII, PCD-driven options, customer-specific
-  features). Use when implementing or changing firmware-visible behavior, when the user
-  mentions Engineering Spec, or when feature work requires spec/documentation sync.
+  MANDATORY for SMBIOS, Setup menu, HII, and firmware-visible feature work. Read and
+  update Engineering Spec.docx when adding or changing SMBIOS fields (Type 1 product name,
+  serial, manufacturer, system product name), Setup menu options, PCD-driven visible defaults,
+  or customer-specific behavior. Use when the user says SMBIOS, system product name, Type 1,
+  dmidecode, Setup menu, HII, Engineering Spec, or any task that changes what OS/tools report.
+  Read the spec at task START (read-engineering-spec.py); update before marking feature done
+  (update-engineering-spec.py). Pair with knowledge-capture skill for markdown playbooks.
   Resolves path via resolve-kb-paths.py; default file is Engineering Spec.docx under
   PROJECT_KB_ROOT/development-guides/playbooks/.
 ---
@@ -33,6 +36,8 @@ pip install -r .cursor/skills/bios-engineering-spec/requirements.txt
 Requires **`python-docx`**. For complex formatting or tracked changes, fall back to the xlsx skill Office tools: `.cursor/skills/xlsx/scripts/office/unpack.py` and `pack.py`.
 
 ## When to run (mandatory for feature work)
+
+**Trigger**: Any task that changes SMBIOS tables, Setup menu defaults, HII strings, or other values visible to the OS, dmidecode, or end users — including phrases like *"add system product name"*, *"SMBIOS Type 1"*, *"product name = …"*.
 
 Update Engineering Spec when the change affects **documented product behavior**, including:
 

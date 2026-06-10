@@ -8,6 +8,8 @@ globs: OvmfPkg/**,OnboardingPkg/**,qemu-smbios-test/**
 
 Run **after** a successful OVMF build when validating SMBIOS Type 1 (manufacturer, product, serial, BIOS version).
 
+**When adding or changing SMBIOS fields** (e.g. system product name), also update **`Engineering Spec.docx`** via **`.cursor/skills/bios-engineering-spec/SKILL.md`** (`engineering-spec-sync.mdc`) — read spec before coding, update before marking the task done.
+
 **Script**: `qemu-smbios-test/run-smbios-dump.sh`  
 **Reference**: `qemu-smbios-test/SMBIOS-RESULT.md`  
 **KB playbook**: `development-guides/playbooks/qemu-smbios-smoke-test.md` (Onboarding 2nd Brain)

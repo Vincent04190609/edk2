@@ -1,0 +1,42 @@
+---
+description: MANDATORY Engineering Spec sync — invoke bios-engineering-spec skill for SMBIOS, Setup menu, HII, and other firmware-visible feature work
+alwaysApply: true
+---
+
+# MANDATORY: Engineering Spec Sync
+
+**Pair with `knowledge-capture.mdc`:** feature work updates **both** a markdown playbook **and** `Engineering Spec.docx`.
+
+## When this rule applies (read skill immediately)
+
+Invoke **`.cursor/skills/bios-engineering-spec/SKILL.md`** when the task touches **documented product behavior**, including:
+
+| Trigger (user task or code area) | Spec section |
+|----------------------------------|--------------|
+| SMBIOS Type 1/2/3 field add or change (product name, serial, manufacturer, …) | Customer Specific Features → System Management BIOS |
+| "add system product name", "SMBIOS", "Type 1", "dmidecode" field work | Same |
+| Setup menu / HII option add or default change | SETUP MENU → Setting Items |
+| PCD/token default that changes a visible SMBIOS or Setup value | Matching table row |
+| Customer-specific firmware-visible feature | Customer Specific Features |
+
+**Skip** only for refactors, build fixes, or internal changes with **no** spec-visible impact.
+
+## Required workflow (do not skip)
+
+1. **At task start** — Read the skill file, run `resolve-kb-paths.py`, then `read-engineering-spec.py` to see current spec rows before coding.
+2. **Implement** firmware change (edk2 / HII / PCD / SMBIOS).
+3. **Before marking done** — Run `update-engineering-spec.py` (or manual docx edit per skill) and re-run `read-engineering-spec.py` to verify.
+4. **Also** run **knowledge-capture** skill for the markdown playbook.
+
+A SMBIOS or Setup feature is **NOT complete** until `Engineering Spec.docx` is updated (or the user explicitly opts out).
+
+## Enforcement tokens
+
+Include `Engineering Spec.docx` in the final write-back line when updated:
+
+```
+KB_UPDATED: yes — {playbook path}, {ENGINEERING_SPEC_DOC}
+ENGINEERING_SPEC_UPDATED: yes — {ENGINEERING_SPEC_DOC}
+```
+
+Use `ENGINEERING_SPEC_UPDATED: skipped (<reason>)` only when the user opts out or the change has no spec impact.

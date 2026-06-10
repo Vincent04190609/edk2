@@ -41,6 +41,7 @@ Based on the topic, read the README.md in the matching subdirectory:
 | EDK2 coding rules | `../../Common/Coding-Rule/EDK2_Coding_Rules.md` |
 | Commit message format | `../../Common/Commit-Rule/Commit-Rule.md` |
 | Feature implementation (how-to) | `./development-guides/playbooks/` |
+| SMBIOS / Setup / HII feature (formal spec) | `./development-guides/playbooks/Engineering Spec.docx` — read via **bios-engineering-spec** skill |
 | Bug fixes (symptom → fix) | `./troubleshooting/runbooks/` |
 
 Paths in the table above are relative to **`PROJECT_KB_ROOT`** unless they start with `COMMON_FROM_PROJECT` (`../../Common/...`), which points to **`COMMON_KB_ROOT`**.
@@ -48,6 +49,8 @@ Paths in the table above are relative to **`PROJECT_KB_ROOT`** unless they start
 ## Step 5 — Write Back After Feature or Bugfix Work
 
 After implementing a feature or fixing a bug, you MUST update the knowledge base per `knowledge-capture.mdc` and the **knowledge-capture** skill. A task is not complete until playbooks/runbooks (or version logs) are updated or the user explicitly opts out.
+
+For **SMBIOS, Setup menu, HII, or other firmware-visible features**, also update **`Engineering Spec.docx`** via the **bios-engineering-spec** skill (`engineering-spec-sync.mdc`). Read the spec **before** coding; update it **before** marking the task done.
 
 ## Step 3 — Follow Links Within the Knowledge Base
 

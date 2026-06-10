@@ -101,8 +101,9 @@ Read workflow docs and `.cursor/rules`. Produce this short plan, then **continue
 ```
 ## Knowledge Check
 Reading: <list of KB files / playbooks being consulted>
+Engineering Spec: read-engineering-spec.py (mandatory for SMBIOS / Setup / HII features)
 ```
-Consult relevant KB playbooks and runbooks before writing code. Note any gaps or conflicts found.
+Consult relevant KB playbooks and runbooks before writing code. For **SMBIOS, Setup menu, or HII** tasks, **read `.cursor/skills/bios-engineering-spec/SKILL.md`** and run `read-engineering-spec.py` before editing firmware. Note any gaps or conflicts found.
 
 ### Vibe Code
 **Emit at start:**
@@ -167,11 +168,15 @@ End with `VERIFY: pass` on success, or `VERIFY: fail` with mismatch details on f
 
 After completing a feature or bugfix, update the knowledge base per `knowledge-capture.mdc`. A task is **not complete** until playbooks/runbooks are updated or the user explicitly opts out.
 
+For **SMBIOS, Setup menu, HII, or other firmware-visible features**, also update **`Engineering Spec.docx`** via the **bios-engineering-spec** skill (`engineering-spec-sync.mdc`). Read spec at task start; update before delivery.
+
 At the end of the reply where write-back is resolved, emit exactly one of:
 
 ```
-KB_UPDATED: yes — <comma-separated list of KB files created/updated>
+KB_UPDATED: yes — <comma-separated list of KB files created/updated, include Engineering Spec.docx when updated>
 KB_UPDATED: skipped (<reason>)
+ENGINEERING_SPEC_UPDATED: yes — <ENGINEERING_SPEC_DOC path>
+ENGINEERING_SPEC_UPDATED: skipped (<reason>)
 ```
 
-Use `yes` when a playbook or runbook was written and verified on disk. Use `skipped` with a reason when the session had no feature/bugfix work, or the user explicitly opted out. The `stop` hook reads this token to decide whether to allow the session to close.
+Use `yes` when a playbook or runbook was written and verified on disk. Include `Engineering Spec.docx` in `KB_UPDATED` when the bios-engineering-spec skill ran. Use `skipped` with a reason when the session had no feature/bugfix work, no spec-visible change, or the user explicitly opted out. The `stop` hook reads this token to decide whether to allow the session to close.
