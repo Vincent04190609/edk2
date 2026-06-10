@@ -12,20 +12,18 @@ Guidance for AI agents (Cursor, Claude, Gemini CLI, Fleet, and others) working i
 
 ## Knowledge Base
 
-Read the knowledge base **before** writing code. Paths are resolved per `project-knowledge.mdc` / `lookup-order.mdc`:
+Read the knowledge base **before** writing code. Paths are resolved from **`.cursor/kb-path-config.json`** via **`python .cursor/scripts/resolve-kb-paths.py`** (see `project-knowledge.mdc`, `.cursor/KB-PATH-MODES.md`):
 
-| What | Path |
+| What | Path variable |
 |------|------|
-| Project KB entry | `PROJECT_KB_ROOT/README.md` |
-| Development guides | `PROJECT_KB_ROOT/development-guides/` |
-| Playbooks (how-to) | `PROJECT_KB_ROOT/development-guides/playbooks/` |
-| Runbooks (bug fixes) | `PROJECT_KB_ROOT/troubleshooting/runbooks/` |
-| BIOS release rules | `PROJECT_KB_ROOT/development-guides/BIOS-Release-Version-Rules.md` |
-| VersionList | `PROJECT_KB_ROOT/development-guides/VersionList.xlsx` |
+| Project KB entry | `PROJECT_KB_README` |
+| Development guides | `{PROJECT_KB_ROOT}/development-guides/` |
+| Playbooks (how-to) | `{PROJECT_KB_ROOT}/development-guides/playbooks/` |
+| Runbooks (bug fixes) | `{PROJECT_KB_ROOT}/troubleshooting/runbooks/` |
+| BIOS release rules | `{PROJECT_KB_ROOT}/development-guides/BIOS-Release-Version-Rules.md` |
+| VersionList | `{PROJECT_KB_ROOT}/development-guides/VersionList.xlsx` |
 
-> **Path translation**: `PROJECT_KB_ROOT` is a Windows path defined in `project-knowledge.mdc`.
-> On Linux/WSL: translate `d:\...` → `/mnt/d/...`.
-> Inside a Fleet container: use `/home/workspace/project_kb/{ProjectName}/` — see `role.md`.
+> **Developer switch**: set `mode` in `.cursor/kb-path-config.json` — **`fleet`** (default, Docker bind mounts) or **`windows`** (native `d:\...`). Fleet does not read/write KB; only agent rules/skills do.
 
 ## OVMF Build
 

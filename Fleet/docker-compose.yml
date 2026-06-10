@@ -1,0 +1,49 @@
+services:
+  fleet:
+    image: fleet-aifw:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "58888:58888"   # Fleet API (must match AIFW_API_PORT below)
+      - "8000:8000"     # Dashboard
+    volumes:
+      # BIOS source + worktrees — Docker-managed named volume (native Linux ext4).
+      # Lives independently of the container: survives `docker compose down` and
+      # Docker Desktop being off; removed only by `docker compose down -v` /
+      # `docker volume rm`. The Cursor agent runs IN this container against these
+      # paths, so no Windows bind mount and no CRLF translation.
+      - bios_src:/home/workspace/bios_project
+      # Build scratch (Build/, *.obj) — fast ephemeral volume, kept off the source
+      # volume so the OpenSSL object-file storm never slows the source tree.
+      - fleet_build:/build
+      # CSV data store + task_logs — bind-mounted so operators can review/edit in
+      # Excel on the host. Survives container rebuilds.
+      - ${AIFW_HOST_DATA_DIR}:/app/excel_templates
+      # Project knowledge bases — host D:/VibeCoding/Projects/{ProjectName} tree.
+      # Mount the parent folder so agents can resolve KB per active project name.
+      - ${AIFW_HOST_KB_PROJECTS_ROOT}:/home/workspace/project_kb
+      # Shared Common KB (specs, coding rules) — agents only; Fleet app does not read/write these.
+      - ${AIFW_HOST_COMMON_KB_ROOT:-D:/VibeCoding/Common}:/home/workspace/common_kb
+    environment:
+      TZ: ${AIFW_TIMEZONE:-UTC}
+      AIFW_DOCKER: "1"
+      AIFW_CONTAINER_BIOS_ROOT: /home/workspace/bios_project
+      AIFW_CONTAINER_KB_PROJECTS_ROOT: /home/workspace/project_kb
+      AIFW_BUILD_SCRATCH_ROOT: /build
+      AIFW_DATA_DIR: /app/excel_templates
+      AIFW_API_HOST: "0.0.0.0"
+      # Override .env if it still has 8787 from the legacy supervisor setup.
+      AIFW_API_PORT: "58888"
+      # GitHub push/PR after delivery approval (set in .env; entrypoint configures git + gh).
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GH_TOKEN: ${GH_TOKEN:-${GITHUB_TOKEN:-}}
+    env_file:
+      - .env          # CURSOR_API_KEY, GITHUB_TOKEN, AIFW_CURSOR_MODEL, etc.
+    restart: unless-stopped
+
+volumes:
+  bios_src:
+    name: aifw_bios_src
+  fleet_build:
+    name: aifw_fleet_build

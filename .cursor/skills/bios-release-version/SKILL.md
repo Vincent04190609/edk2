@@ -12,26 +12,20 @@ description: >-
 
 Procedural gate for Test and Formal BIOS releases. **Excel is the source of truth** — read it, increment, write it back, verify, then update firmware code.
 
-**Paths**: Resolve from **`project-knowledge.mdc`**:
+**Paths**: Run **`python .cursor/scripts/resolve-kb-paths.py`** first, then derive:
 
 | Variable | Resolved as |
 |----------|-------------|
-| `PROJECT_KB_ROOT` | Project knowledge base root |
+| `PROJECT_KB_ROOT` | From resolver output |
 | `VERSION_RULES` | `{PROJECT_KB_ROOT}/development-guides/BIOS-Release-Version-Rules.md` |
 | `VERSION_LIST` | `{PROJECT_KB_ROOT}/development-guides/VersionList.xlsx` |
 | `VERSION_FALLBACK` | `{PROJECT_KB_ROOT}/development-guides/config/version_tracking.json` |
 
-**WSL path resolution (MANDATORY)**: `PROJECT_KB_ROOT` is stored as a Windows path (e.g. `d:\VibeCoding\Projects\Onboarding`). When running in WSL/Linux, convert to POSIX before any file operation:
-
-```
-d:\VibeCoding\Projects\Onboarding  →  /mnt/d/VibeCoding/Projects/Onboarding
-```
-
-Always use the `/mnt/d/...` form when calling Python (pandas/openpyxl) or shell tools from WSL. Never pass `d:\...` to a Linux process.
+Use the resolver paths for all Python/shell file I/O. Do not hardcode `d:\...` or `/mnt/d/...`. Mode is set in **`.cursor/kb-path-config.json`** (`fleet` default, `windows` for native Windows).
 
 **Related skills**: Use the **xlsx** skill (`.cursor/skills/xlsx/SKILL.md`) for all Excel read/write operations.
 
-> **⚠ WSL / out-of-workspace write**: `VERSION_LIST` (the Excel) lives under `PROJECT_KB_ROOT`, which is **outside the agent workspace** at a `/mnt/<drive>/...` path (translate `d:\...` → `/mnt/d/...`). The default sandbox blocks writes there, so a sandboxed `wb.save()` / file write returns **`Permission denied`** and the row never lands. Run the Excel **write with elevated permissions** (outside the sandbox), then **re-read the file to verify** (Step 5 is mandatory, not optional). See "Runtime path resolution" in `project-knowledge.mdc`.
+> **⚠ Out-of-workspace write**: `VERSION_LIST` lives under resolved `PROJECT_KB_ROOT`, outside the edk2 workspace. Sandboxed `wb.save()` may return **`Permission denied`**. Run Excel writes with **elevated permissions**, then **re-read the file to verify** (Step 5 is mandatory). See `project-knowledge.mdc`.
 
 ## When to Use
 
@@ -52,7 +46,7 @@ Read Excel → Increment → Write Excel → Verify Excel → Update .dsc → Re
 **STOP** if Excel read or write fails. Do not update code or build until Excel is updated and verified.
 
 > ⛔ **Hard stop rule**: If the xlsx skill cannot open, read, or write `{VERSION_LIST}`, reply to the user immediately:
-> `"⛔ Excel update FAILED — path: {VERSION_LIST} (WSL: /mnt/d/...). NOT proceeding to .dsc update. Fix the path or file and retry."`
+> `"⛔ Excel update FAILED — path: {VERSION_LIST}. NOT proceeding to .dsc update. Fix kb-path-config / bind mounts and retry."`
 > Do NOT continue to Step 3 or beyond until Excel is confirmed readable and writable.
 
 ## Step 1 — Read rules and classify release type

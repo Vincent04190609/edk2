@@ -11,7 +11,7 @@ This file contains codebase context and development guidelines for the BIOS proj
 
 ## Knowledge Base
 
-**Path variables (single source of truth)**: see **`project-knowledge.mdc`** — `PROJECT_NAME`, `PROJECT_KB_ROOT`, `COMMON_KB_ROOT`. Do not hardcode project folder names elsewhere.
+**Path variables (single source of truth)**: **`.cursor/kb-path-config.json`** + **`python .cursor/scripts/resolve-kb-paths.py`** — see **`project-knowledge.mdc`** and **`.cursor/KB-PATH-MODES.md`**. Do not hardcode project folder names elsewhere.
 
 ### Two layers
 
@@ -22,7 +22,7 @@ This file contains codebase context and development guidelines for the BIOS proj
 
 ### Project knowledge (current: `PROJECT_NAME` = Onboarding)
 
-**Entry**: `PROJECT_KB_README` = `{PROJECT_KB_ROOT}\README.md` (derived in `project-knowledge.mdc`)
+**Entry**: `PROJECT_KB_README` — resolved by `resolve-kb-paths.py` (see `project-knowledge.mdc`)
 
 Under `PROJECT_KB_ROOT`:
 

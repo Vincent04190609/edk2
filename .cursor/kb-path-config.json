@@ -1,0 +1,18 @@
+{
+  "mode": "fleet",
+  "project_name": "Onboarding",
+  "paths": {
+    "fleet": {
+      "project_kb_projects_root": "/home/workspace/project_kb",
+      "common_kb_root": "/home/workspace/common_kb"
+    },
+    "windows": {
+      "project_kb_projects_root": "d:\\VibeCoding\\Projects",
+      "common_kb_root": "d:\\VibeCoding\\Common"
+    }
+  },
+  "code_repo": {
+    "root": "d:\\SourceCode\\BIOS_Project\\edk2_0609_Org\\edk2",
+    "url": "https://github.com/Vincent04190609/edk2.git"
+  }
+}

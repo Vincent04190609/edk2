@@ -11,15 +11,15 @@ description: >-
 
 Captures reusable FW engineering knowledge into the Primary Knowledge Repository so future agent sessions and engineers benefit.
 
-**Paths**: Resolve from **`project-knowledge.mdc`**:
+**Paths**: Run **`python .cursor/scripts/resolve-kb-paths.py`** (reads **`.cursor/kb-path-config.json`**):
 
 - `PROJECT_KB_ROOT` — where to write playbooks/runbooks
-- `PROJECT_KB_README` — `{PROJECT_KB_ROOT}\README.md` (derive; read first)
+- `PROJECT_KB_README` — read first
 - `COMMON_KB_ROOT` / `COMMON_FROM_PROJECT` — shared standards only
 
 **Read discipline**: Follow `lookup-order` before implementing — check for existing playbooks/runbooks first.
 
-> **⚠ WSL / out-of-workspace write**: `PROJECT_KB_ROOT` is **outside the agent workspace** at a `/mnt/<drive>/...` path (translate `d:\...` → `/mnt/d/...`). The default sandbox blocks writes there, so `Write`/`StrReplace`/sandboxed shell writes return **`Permission denied`** and the file silently never lands. Perform KB writes with **elevated permissions**, then **read the file back from disk to confirm** before reporting success. See "Runtime path resolution" in `project-knowledge.mdc`.
+> **⚠ Out-of-workspace write**: `PROJECT_KB_ROOT` is **outside the edk2 workspace** in both **`fleet`** and **`windows`** modes. Sandboxed writes may return **`Permission denied`**. Use **elevated permissions**, then **read the file back from disk to confirm** before reporting success. See `project-knowledge.mdc` and `.cursor/KB-PATH-MODES.md`.
 
 ## Quick Decision
 
@@ -62,7 +62,7 @@ Do **not** guess the next version or skip Excel — delegate entirely to **bios-
 
 ### Step 5 — Hand off to user
 
-**Before replying**, `ls`/read each created or updated KB file back from its `/mnt/<drive>/...` path to confirm it landed on disk. If a write was blocked, redo it with elevated permissions. Do not list a file as "Created/Updated" unless verified.
+**Before replying**, `ls`/read each created or updated KB file back at the resolved `PROJECT_KB_ROOT` path to confirm it landed on disk. If a write was blocked, redo it with elevated permissions. Do not list a file as "Created/Updated" unless verified.
 
 Reply with:
 

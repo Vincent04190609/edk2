@@ -9,9 +9,9 @@ alwaysApply: true
 
 A feature implementation or bugfix task is **NOT complete** until the Primary Knowledge Repository has been updated (or the user explicitly opts out).
 
-**Write-back target**: `PROJECT_KB_ROOT` (see **`project-knowledge.mdc`** for `PROJECT_NAME` and paths). Do not write project playbooks/runbooks into `COMMON_KB_ROOT` unless explicitly updating shared standards.
+**Write-back target**: resolved `PROJECT_KB_ROOT` from **`.cursor/kb-path-config.json`** + **`python .cursor/scripts/resolve-kb-paths.py`**. Do not write project playbooks/runbooks into `COMMON_KB_ROOT` unless explicitly updating shared standards.
 
-> **⚠ WSL write access**: The KB lives outside the workspace at a `/mnt/<drive>/...` path (translate `d:\...` → `/mnt/d/...`). Sandboxed file tools **cannot** write there — use **elevated permissions** and then **read the file back to confirm** it landed. See the "Runtime path resolution" section in `project-knowledge.mdc`. Never mark write-back done without verifying the file on disk.
+> **⚠ Out-of-workspace write**: KB roots are outside the edk2 git workspace in both **`fleet`** and **`windows`** modes. Sandboxed file tools may return **`Permission denied`** — use **elevated permissions**, then **read the file back to confirm**. See `project-knowledge.mdc` and `.cursor/KB-PATH-MODES.md`.
 
 ## When This Rule Applies
 
@@ -33,10 +33,11 @@ Always update the **index README** in that folder and link from `development-gui
 
 ## Required Workflow
 
-1. **Check existing docs** — Search playbooks/runbooks before writing; update an existing doc if the topic matches.
-2. **Write or update** — Use the templates in each folder (`TEMPLATE-*.md`).
-3. **Index** — Add a link in the folder `README.md`.
-4. **Report to user** — List every knowledge-base file created or updated and ask for review before committing KB changes (unless user says to commit).
+1. **Resolve paths** — run `resolve-kb-paths.py`.
+2. **Check existing docs** — Search playbooks/runbooks before writing; update an existing doc if the topic matches.
+3. **Write or update** — Use the templates in each folder (`TEMPLATE-*.md`).
+4. **Index** — Add a link in the folder `README.md`.
+5. **Report to user** — List every knowledge-base file created or updated and ask for review before committing KB changes (unless user says to commit).
 
 For detailed steps, use the **knowledge-capture** skill (`.cursor/skills/knowledge-capture/SKILL.md`).
 

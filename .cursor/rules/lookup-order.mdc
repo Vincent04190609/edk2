@@ -11,15 +11,15 @@ Before searching, reading, or grepping ANY source code in this repository, you M
 
 ## Step 0 — Resolve project paths
 
-Read variables from **`project-knowledge.mdc`**: `PROJECT_NAME`, `PROJECT_KB_ROOT`, `COMMON_KB_ROOT`, `COMMON_FROM_PROJECT`.
+1. Read **`.cursor/kb-path-config.json`** (`mode`, `project_name`).
+2. Run **`python .cursor/scripts/resolve-kb-paths.py`** — use its output for `PROJECT_KB_ROOT`, `COMMON_KB_ROOT`, `PROJECT_KB_README`.
+3. See **`.cursor/KB-PATH-MODES.md`** and **`project-knowledge.mdc`** for `fleet` vs `windows` modes.
 
-Compute **`PROJECT_KB_README`** = `{PROJECT_KB_ROOT}\README.md` (do not use a stale path from another project).
-
-**Runtime path (WSL/Linux)**: these variables use Windows `d:\...` paths. When running under WSL/Linux, translate `d:\...` → `/mnt/d/...` before reading (a literal `d:\...` path does not resolve on Linux). For write-back, the KB is outside the workspace and needs elevated permissions — see "Runtime path resolution" in `project-knowledge.mdc`.
+Do not use stale Windows or WSL paths from memory. The config switch (default **`fleet`**) determines runtime paths.
 
 ## Step 1 — Read the project knowledge base FIRST
 
-**ALWAYS start here**: `PROJECT_KB_README` (README under `PROJECT_KB_ROOT` for the current `PROJECT_NAME`).
+**ALWAYS start here**: `PROJECT_KB_README` (README under `PROJECT_KB_ROOT` for the current `project_name`).
 
 Read that file and identify the relevant subdirectory for the user's question.
 

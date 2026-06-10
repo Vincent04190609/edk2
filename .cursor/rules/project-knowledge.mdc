@@ -5,74 +5,61 @@ alwaysApply: true
 
 # Project Knowledge Configuration
 
-**SINGLE SOURCE OF TRUTH** for knowledge-base paths. Other rules (`lookup-order`, `knowledge-capture`) and skills MUST use the variables below — do **not** hardcode project folder names like `Onboarding` in agent workflows.
+**SINGLE SOURCE OF TRUTH for KB path switch and project id.** Other rules (`lookup-order`, `knowledge-capture`) and skills MUST use the config + resolver below — do **not** hardcode project folder names or `d:\...` paths in agent workflows.
 
-## ⚠️ Runtime path resolution (WSL / Linux) — READ BEFORE ANY KB WRITE-BACK
+## Developer switch — `.cursor/kb-path-config.json`
 
-The KB variables below use **Windows drive paths** (`d:\...`), but agents in this workspace run under **WSL/Linux**. This mismatch is the #1 reason knowledge-base write-backs silently fail. Before reading or writing the KB:
+| Field | Purpose |
+|-------|---------|
+| `mode` | **`fleet`** (default) — Docker bind-mount paths; **`windows`** — native `d:\...` paths |
+| `project_name` | KB folder name under Projects (e.g. `Onboarding`) |
+| `paths.fleet` | Container roots: `project_kb_projects_root`, `common_kb_root` |
+| `paths.windows` | Host roots: `project_kb_projects_root`, `common_kb_root` |
+| `code_repo` | This edk2 clone (`root`, `url`) |
 
-1. **Translate the path**: `d:\VibeCoding\...` → `/mnt/d/VibeCoding/...` (drive letter → `/mnt/<letter>`, backslashes → forward slashes). A literal `d:\...` path does **not** exist on Linux and any write to it fails or lands in the wrong place.
-2. **The KB is OUTSIDE the agent workspace** (`PROJECT_KB_ROOT` is under `/mnt/d`, not under the edk2 repo). The default tool sandbox only permits writes **inside the workspace**, so `Write`/`StrReplace`/sandboxed shell writes to the KB return **`Permission denied`**. You MUST perform KB writes with **elevated permissions** (run the write command with `all` permissions / outside the sandbox).
-3. **Verify the write landed**: after creating/updating a KB file, `ls`/read it back at the `/mnt/d` path. Do not report the KB as "updated" until the file is confirmed on disk. (A blocked write that is not verified is exactly how previous sessions "fixed" this and failed again.)
+Full guide: **`.cursor/KB-PATH-MODES.md`**
 
-## Variables to edit when switching projects
+## Agent resolution (MANDATORY before any KB read/write)
 
-Edit **only these two** in this file (and mirror `PROJECT_NAME` / `PROJECT_KB_ROOT` in `PROJECT_KB_ROOT/PROJECT.md`):
+1. Read **`.cursor/kb-path-config.json`**.
+2. Run **`python .cursor/scripts/resolve-kb-paths.py`** from repo root (or `--key PROJECT_KB_ROOT` for one value).
+3. Use the resolved paths for all file I/O. Do not guess `/mnt/d/...` or `/home/workspace/...`.
 
-| Variable | Current value | Purpose |
-|----------|---------------|---------|
-| `PROJECT_NAME` | `Onboarding` | Product / knowledge-base project id |
-| `PROJECT_KB_ROOT` | `d:\VibeCoding\Projects\Onboarding` | Project-specific 2nd Brain (playbooks, runbooks, Docker, versioning) |
+Resolved variables:
 
-## Derived variables (do not edit — compute from above)
+| Variable | Meaning |
+|----------|---------|
+| `PROJECT_KB_ROOT` | `{projects_root}/{project_name}` for active mode |
+| `COMMON_KB_ROOT` | Shared specs, coding rules, commit rules |
+| `PROJECT_KB_README` | `{PROJECT_KB_ROOT}/README.md` |
+| `COMMON_FROM_PROJECT` | `../../Common` (relative links inside KB markdown) |
+| `CODE_REPO_ROOT` / `CODE_REPO_URL` | This firmware workspace |
 
-Agents MUST resolve these from `PROJECT_KB_ROOT` / layout; never leave them pointing at an old project.
+## Mode summary
 
-| Variable | Resolved as |
-|----------|-------------|
-| `PROJECT_KB_README` | `{PROJECT_KB_ROOT}\README.md` |
-| `COMMON_FROM_PROJECT` | `../../Common` (relative from `PROJECT_KB_ROOT` → `COMMON_KB_ROOT`) |
+| `mode` | Typical environment | `PROJECT_KB_ROOT` example |
+|--------|---------------------|---------------------------|
+| **`fleet`** | Fleet / Linux Docker container | `/home/workspace/project_kb/Onboarding` |
+| **`windows`** | Cursor on Windows (no container) | `d:/VibeCoding/Projects/Onboarding` |
 
-Example: if `PROJECT_KB_ROOT` = `d:\VibeCoding\Projects\ProductX`, then `PROJECT_KB_README` = `d:\VibeCoding\Projects\ProductX\README.md`.
+**Fleet bind mounts** (infrastructure only — Fleet app does not touch KB files): host `D:/VibeCoding/Projects` → `/home/workspace/project_kb`, host `D:/VibeCoding/Common` → `/home/workspace/common_kb`. See `Fleet/docker-compose.yml`.
 
-## Shared / workspace variables (usually unchanged)
+## Write-back outside workspace
 
-| Variable | Current value | Purpose |
-|----------|---------------|---------|
-| `COMMON_KB_ROOT` | `d:\VibeCoding\Common` | Shared knowledge (specs, coding rules, commit rules) — all projects |
-| `CODE_REPO_ROOT` | `d:\SourceCode\BIOS_Project\EDK2_0526\edk2` | This edk2 workspace (firmware source) |
-| `CODE_REPO_URL` | `https://github.com/Vincent04190609/edk2.git` | Git remote for this code repo |
+`PROJECT_KB_ROOT` is **outside** the edk2 git workspace in both modes. Sandboxed `Write`/`StrReplace`/shell writes may return **`Permission denied`**. Use **elevated permissions**, then **read the file back** to confirm it landed. Never report KB updated without verification.
 
-## Two-Layer Knowledge Model
+## Two-layer knowledge model
 
 | Layer | Root | Contains |
 |-------|------|----------|
-| **Common** | `COMMON_KB_ROOT` | UEFI / SMBIOS / ACPI specs, `Coding-Rule/`, `Commit-Rule/`, industry standards |
-| **Project** | `PROJECT_KB_ROOT` | `development-guides/`, `playbooks/`, `runbooks/`, `DockerImage/`, `VersionList.xlsx`, project architecture |
+| **Common** | `COMMON_KB_ROOT` | UEFI / SMBIOS / ACPI specs, `Coding-Rule/`, `Commit-Rule/` |
+| **Project** | `PROJECT_KB_ROOT` | `development-guides/`, playbooks, runbooks, `VersionList.xlsx`, DockerImage |
 
-## WSL Path Resolution (MANDATORY for agents running in WSL/Linux)
+## Changing to another project
 
-`PROJECT_KB_ROOT` and `COMMON_KB_ROOT` are stored as Windows paths. Agents running in WSL **MUST** convert to POSIX before any file I/O or Python operation:
+1. Edit **`project_name`** in `.cursor/kb-path-config.json`.
+2. Re-run **`resolve-kb-paths.py`** and read `PROJECT_KB_README`.
+3. Update `PROJECT.md` in that KB repo if needed.
+4. Open the matching edk2 worktree; update `code_repo.root` in config if the clone path differs.
 
-| Windows path | WSL/Linux equivalent |
-|---|---|
-| `d:\VibeCoding\Projects\Onboarding` | `/mnt/d/VibeCoding/Projects/Onboarding` |
-| `d:\VibeCoding\Common` | `/mnt/d/VibeCoding/Common` |
-
-**Rule**: Replace `d:\` → `/mnt/d/`, then replace all `\` → `/`. Never pass a `d:\...` path to a Linux process (Python, shell, openpyxl, etc.).
-
-## How Agents Resolve Paths
-
-1. **Project workflows** → compute `PROJECT_KB_README`, read it, then use paths under `PROJECT_KB_ROOT` (converted to WSL form if on Linux).
-2. **Standards** → `COMMON_KB_ROOT` or `COMMON_FROM_PROJECT` from project docs.
-3. **Write-back** → only under `PROJECT_KB_ROOT` unless updating Common standards.
-4. **Markdown in project KB** → relative paths (`./development-guides/...`, `../../Common/...`).
-
-## Changing to Another Project
-
-1. Edit **`PROJECT_NAME`** and **`PROJECT_KB_ROOT`** in this file only.
-2. Update `PROJECT.md` at the new `PROJECT_KB_ROOT` (copy from another project if needed).
-3. Open the matching edk2 code workspace; update `CODE_REPO_ROOT` / `CODE_REPO_URL` here if that clone differs.
-4. `lookup-order` / `knowledge-capture` need no changes — they reference this file.
-
-See also: `project-prd.mdc` (repo setup, PR protocol), `project-prd-org.md` (full PRD).
+See also: `lookup-order.mdc`, `knowledge-capture.mdc`, `.cursor/KB-PATH-MODES.md`, `project-prd.mdc`.
