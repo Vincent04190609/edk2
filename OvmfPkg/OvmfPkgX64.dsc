@@ -511,8 +511,8 @@
 [PcdsFixedAtBuild]
   # SMBIOS Manufacturer and BIOS Version for JIRA-523-1
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor|L"Vibe-Factory"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T83"
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-04 22:25:39"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"T95"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString|L"2026-06-17 11:10:00"
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
